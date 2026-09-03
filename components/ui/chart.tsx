@@ -61,7 +61,11 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
+        {/* debounce: sin esto, ResponsiveContainer recalcula el SVG entero
+            (escalas, paths) en cada frame de resize -- la transicion de
+            width del sidebar (300ms) dispara eso en rafaga en cada chart
+            montado. 150ms alcanza para que se asiente antes de recalcular. */}
+        <RechartsPrimitive.ResponsiveContainer debounce={150}>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>
