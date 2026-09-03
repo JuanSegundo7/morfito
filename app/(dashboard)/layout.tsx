@@ -52,7 +52,16 @@ export default async function DashboardLayout({
           ) : (
             <SidebarProvider defaultOpen={false}>
               <SidebarLayout activeServiceKeys={activeServiceKeys}>{children}</SidebarLayout>
-              <Toaster richColors position="top-right" />
+              <Toaster
+                richColors
+                position="top-right"
+                theme="dark"
+                toastOptions={{
+                  classNames: {
+                    toast: "material-thick !text-foreground",
+                  },
+                }}
+              />
             </SidebarProvider>
           )}
           <Analytics />

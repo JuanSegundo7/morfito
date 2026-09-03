@@ -444,7 +444,7 @@ export default function CombosPage() {
 
       {/* ---------- DELETE ---------- */}
       <AlertDialog open={deleteOpen} onOpenChange={(o) => !o && closeDelete()}>
-        <AlertDialogContent className="ios-glass rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar "{deleting?.name}"?</AlertDialogTitle>
           </AlertDialogHeader>

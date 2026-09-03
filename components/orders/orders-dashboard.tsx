@@ -30,6 +30,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { OrderCard } from "./order-card";
+import { motion } from "framer-motion";
+import { springs } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -44,6 +46,15 @@ import {
 import { useOrderForEdit } from "@/lib/hooks/orders/use-order-for-edit";
 import { useQueryClient } from "@tanstack/react-query";
 import type { OrderStatus } from "@/lib/types";
+
+// Glow del DragOverlay en el color de estado de la tarjeta que se está
+// arrastrando (mismo mapeo que order-card.tsx / order-column.tsx).
+const statusGlowVar: Record<string, string> = {
+  new: "var(--status-new)",
+  ready: "var(--status-ready)",
+  completed: "var(--status-completed)",
+  canceled: "var(--status-canceled)",
+};
 
 export function OrdersDashboard() {
   const queryClient = useQueryClient();
@@ -229,7 +240,7 @@ export function OrdersDashboard() {
                             : "border-transparent text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <span className="h-2 w-2 rounded-full bg-blue-500" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--status-new)]" />
                         Nuevos
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                           {sortedOrders.filter((o) => o.status === "new").length}
@@ -244,7 +255,7 @@ export function OrdersDashboard() {
                             : "border-transparent text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--status-ready)]" />
                         Listos
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                           {sortedOrders.filter((o) => o.status === "ready").length}
@@ -260,7 +271,6 @@ export function OrdersDashboard() {
                           onViewDetails={(o) => { setSelectedOrder(o); setDetailsOpen(true); }}
                           onEditOrder={handleEditOrder}
                           onChangeStatus={handleChangeStatus}
-                          accentColor="bg-blue-500"
                         />
                       ) : (
                         <OrderColumn
@@ -270,7 +280,6 @@ export function OrdersDashboard() {
                           onViewDetails={(o) => { setSelectedOrder(o); setDetailsOpen(true); }}
                           onEditOrder={handleEditOrder}
                           onChangeStatus={handleChangeStatus}
-                          accentColor="bg-green-500"
                         />
                       )}
                     </div>
@@ -288,7 +297,6 @@ export function OrdersDashboard() {
                       }}
                       onEditOrder={handleEditOrder}
                       onChangeStatus={handleChangeStatus}
-                      accentColor="bg-blue-500"
                     />
                     <OrderColumn
                       title="Listos"
@@ -300,33 +308,45 @@ export function OrdersDashboard() {
                       }}
                       onEditOrder={handleEditOrder}
                       onChangeStatus={handleChangeStatus}
-                      accentColor="bg-green-500"
                     />
                   </div>
                 </div>
 
                 <DragOverlay adjustScale={false}>
                   {activeOrder ? (
-                    <div className="pointer-events-none ">
+                    // will-change: transform va SOLO acá (§11) — es lo único
+                    // que se mueve a cada frame del drag.
+                    <motion.div
+                      className="pointer-events-none rounded-2xl"
+                      style={{
+                        willChange: "transform",
+                        boxShadow: `var(--shadow-xl), 0 0 28px -6px ${
+                          statusGlowVar[activeOrder.status] ?? "var(--status-new)"
+                        }`,
+                      }}
+                      initial={false}
+                      animate={{ scale: 1.03, rotate: -1 }}
+                      transition={springs.lift}
+                    >
                       <OrderCard
                         order={activeOrder}
                         visualStatus={activeOrder.status}
                         onViewDetails={() => {}}
                       />
-                    </div>
+                    </motion.div>
                   ) : null}
                 </DragOverlay>
               </DndContext>
             </div>
           ) : (
             <div className="flex h-full flex-col items-center justify-center">
-              <div className="rounded-full bg-muted p-4">
+              <div className="rounded-full material-thin p-4">
                 <ClipboardList className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">
-                Sin pedidos activos
+              <h3 className="mt-4 text-headline">
+                Todo tranquilo por acá
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-footnote text-muted-foreground">
                 Los nuevos pedidos aparecerán aquí
               </p>
             </div>
@@ -335,7 +355,7 @@ export function OrdersDashboard() {
       </div>
 
       {/* FOOTER */}
-      <div className="border border-border rounded-md bg-card p-4 min-h-17.5 shrink-0">
+      <div className="material-regular rounded-2xl p-4 min-h-17.5 shrink-0">
         <div className="flex h-full items-center justify-between gap-4">
           <div className="text-sm shrink-0">
             <span className="text-muted-foreground">
@@ -368,7 +388,7 @@ export function OrdersDashboard() {
                       key={order.id}
                       size="sm"
                       onClick={() => handleCompleteOrder(order)}
-                      className="bg-green-600 hover:bg-green-700 shrink-0 whitespace-nowrap"
+                      className="bg-[var(--status-ready)] text-white hover:brightness-110 shrink-0 whitespace-nowrap"
                     >
                       <Check className="mr-1 h-4 w-4" />
                       Completar #{order.order_number}

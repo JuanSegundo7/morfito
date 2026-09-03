@@ -376,7 +376,7 @@ export default function ExtrasPage() {
 
       {/* DELETE DIALOG */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="ios-glass rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar item</AlertDialogTitle>
             <AlertDialogDescription>

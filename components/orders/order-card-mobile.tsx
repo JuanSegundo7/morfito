@@ -26,17 +26,19 @@ import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
 import { toast } from "sonner";
 
 const statusConfig = {
-  new: { label: "Nuevo", className: "bg-blue-500 text-white" },
-  ready: { label: "Listo", className: "bg-green-500 text-white" },
-  completed: { label: "Completado", className: "bg-gray-500 text-white" },
-  canceled: { label: "Cancelado", className: "bg-red-500 text-white" },
+  new: { label: "Nuevo", className: "bg-[var(--status-new-tint)] text-[var(--status-new)]" },
+  ready: { label: "Listo", className: "bg-[var(--status-ready-tint)] text-[var(--status-ready)]" },
+  completed: { label: "Completado", className: "bg-[var(--status-completed-tint)] text-[var(--status-completed)]" },
+  canceled: { label: "Cancelado", className: "bg-[var(--status-canceled-tint)] text-[var(--status-canceled)]" },
 };
 
-const statusBorderColor: Record<string, string> = {
-  new: "border-l-blue-500",
-  ready: "border-l-green-500",
-  completed: "border-l-zinc-500",
-  canceled: "border-l-red-500",
+// El estado como luz (status-edge, ver globals.css): mismo mapeo que
+// order-card.tsx — deben ir en lockstep.
+const statusEdgeStyle: Record<string, React.CSSProperties> = {
+  new: { "--status-color": "var(--status-new)", "--status-tint": "var(--status-new-tint)" } as React.CSSProperties,
+  ready: { "--status-color": "var(--status-ready)", "--status-tint": "var(--status-ready-tint)" } as React.CSSProperties,
+  completed: { "--status-color": "var(--status-completed)", "--status-tint": "var(--status-completed-tint)" } as React.CSSProperties,
+  canceled: { "--status-color": "var(--status-canceled)", "--status-tint": "var(--status-canceled-tint)" } as React.CSSProperties,
 };
 
 interface OrderCardMobileProps {
@@ -116,11 +118,11 @@ export function OrderCardMobile({
 
   return (
     // ✅ Eliminado "lg:hidden" — lo maneja el wrapper en SortableOrderCard
-    <Card className={cn("bg-card border-l-4", statusBorderColor[status] ?? "border-l-border")}>
+    <Card className="status-edge" style={statusEdgeStyle[status]}>
       <CardContent className="space-y-4">
         {/* HEADER */}
         <div className="flex items-center justify-between">
-          <p className="font-mono text-lg font-semibold">
+          <p className="text-headline text-muted-foreground">
             #{order.order_number}
           </p>
 
@@ -150,8 +152,8 @@ export function OrderCardMobile({
               className={cn(
                 "rounded-full p-2 transition-colors",
                 order.is_paid
-                  ? "bg-green-100 text-green-600"
-                  : "bg-red-100 text-red-600",
+                  ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
+                  : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
               )}
             >
               <DollarSign className="h-4 w-4" />
@@ -176,7 +178,7 @@ export function OrderCardMobile({
           <div className="flex flex-col items-end gap-1">
             {!isEditing ? (
               <div className="flex items-center gap-1.5">
-                <span className="text-xl font-bold font-mono">
+                <span className="text-amount numeric vibrant">
                   {formatCurrency(order.total_amount)}
                 </span>
                 {canEdit && (
@@ -256,7 +258,7 @@ export function OrderCardMobile({
               size="sm"
               onClick={handleSaveEdit}
               disabled={quickPatch.isPending}
-              className="text-green-600 hover:bg-green-50"
+              className="text-[var(--status-paid)] hover:bg-[var(--status-paid-tint)]"
             >
               <Check className="mr-1 h-4 w-4" />
               Guardar

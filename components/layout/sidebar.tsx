@@ -134,7 +134,7 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
                       className={cn(
                         "rounded-lg transition-all duration-200 h-9",
                         isActive
-                          ? "bg-primary/10 text-primary font-medium"
+                          ? "nav-rail-active bg-primary/10 text-primary font-medium"
                           : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                       )}
                     >

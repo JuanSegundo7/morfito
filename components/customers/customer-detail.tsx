@@ -283,7 +283,7 @@ export function CustomerDetail({
 
       {/* Delete customer dialog */}
       <AlertDialog open={deleteCustomerOpen} onOpenChange={setDeleteCustomerOpen}>
-        <AlertDialogContent className="ios-glass rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -308,7 +308,7 @@ export function CustomerDetail({
         open={!!deleteAddressId}
         onOpenChange={(open) => !open && setDeleteAddressId(null)}
       >
-        <AlertDialogContent className="ios-glass rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar dirección?</AlertDialogTitle>
             <AlertDialogDescription>

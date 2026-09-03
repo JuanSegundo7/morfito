@@ -277,3 +277,140 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
   * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 }
+
+/* Vibrancy (§12): sobre material translúcido el texto quiere más contraste,
+   no más peso ni tracking propio -- eso lo pone la rampa tipografica, que
+   es size-specific (ver a0448f9 en jebbs-dashboard: fijar font-weight:550
+   ganaba por orden de emision al 700 de text-amount, y con
+   font-synthesis-weight:none ese 550 snapeaba a 500, dejando las cifras de
+   dinero mas livianas que lo declarado). Portado ya con el fix aplicado,
+   nunca existio acá con el bug. */
+@utility vibrant {
+  color: var(--foreground);
+}
+
+/* El estado como luz, no como franja (Encanto §1). Requiere que el
+   consumidor setee --status-color / --status-tint (inline style, un
+   valor por tarjeta) antes de aplicar esta clase. */
+@utility status-edge {
+  position: relative;
+  overflow: hidden;
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 3px;
+    background: var(--status-color);
+    box-shadow: 0 0 16px -2px var(--status-color);
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(130% 90% at 0% 0%, var(--status-tint), transparent 62%);
+  }
+}
+
+/* Mismo vocabulario de "luz en el canto" que status-edge, pero fijo al
+   acento de marca — para el item de nav activo (Slice 4). Una idea, tres
+   lugares (tarjetas de pedido, columna drop-target, riel de nav): eso es
+   lo que hace que se lea como sistema. */
+@utility nav-rail-active {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block: 4px;
+    left: -1px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--accent-brand);
+    box-shadow: 0 0 10px -1px var(--accent-brand);
+  }
+}
+
+/* Fallbacks de accesibilidad (§14) — sin capa, para ganar siempre
+   por especificidad de aparición contra las utilities de arriba. */
+
+@media (prefers-reduced-transparency: reduce) {
+  .material-thin,
+  .material-regular,
+  .material-thick,
+  .modal-surface,
+  .scrim,
+  .ios-blur {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .material-thin {
+    background-color: var(--surface-1);
+  }
+  .material-regular {
+    background-color: var(--surface-2);
+  }
+  .material-thick,
+  .modal-surface {
+    background-color: var(--surface-3);
+  }
+  .scrim,
+  .ios-blur {
+    background-color: rgba(0, 0, 0, 0.72);
+  }
+  .ios-sidebar [data-slot="sidebar-inner"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--surface-3);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .dark {
+    --hairline: rgba(255, 255, 255, 0.3);
+    --specular: rgba(255, 255, 255, 0.45);
+    --muted-foreground: rgba(233, 238, 250, 0.9);
+  }
+  :root:not(.dark) {
+    --hairline: rgba(60, 60, 67, 0.36);
+    --specular: rgba(0, 0, 0, 0.16);
+    --muted-foreground: #3c3c43;
+  }
+  .material-thin,
+  .material-regular,
+  .material-thick,
+  .modal-surface {
+    background-color: var(--surface-2);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .material-thin,
+  .material-regular,
+  .material-thick,
+  .modal-surface {
+    background-color: var(--surface-2);
+  }
+  .ios-sidebar [data-slot="sidebar-inner"] {
+    background-color: var(--surface-3);
+  }
+  .scrim,
+  .ios-blur {
+    background-color: rgba(0, 0, 0, 0.72);
+  }
+}
+
+/* §14: reduced motion es un equivalente MÁS SUAVE, no ausencia de feedback.
+   Se preservan opacidad y color; se neutraliza transform/spring/overshoot. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-property: opacity, color, background-color, border-color,
+      box-shadow, fill, stroke !important;
+    transition-duration: 160ms !important;
+    animation-duration: 160ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

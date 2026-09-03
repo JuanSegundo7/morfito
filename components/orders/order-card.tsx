@@ -28,17 +28,19 @@ import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
 import { toast } from "sonner";
 
 const statusConfig = {
-  new: { label: "Nuevo", className: "bg-blue-500 text-white" },
-  ready: { label: "Listo", className: "bg-green-500 text-white" },
-  completed: { label: "Completado", className: "bg-gray-500 text-white" },
-  canceled: { label: "Cancelado", className: "bg-red-500 text-white" },
+  new: { label: "Nuevo", className: "bg-[var(--status-new-tint)] text-[var(--status-new)]" },
+  ready: { label: "Listo", className: "bg-[var(--status-ready-tint)] text-[var(--status-ready)]" },
+  completed: { label: "Completado", className: "bg-[var(--status-completed-tint)] text-[var(--status-completed)]" },
+  canceled: { label: "Cancelado", className: "bg-[var(--status-canceled-tint)] text-[var(--status-canceled)]" },
 };
 
-const statusBorderColor: Record<string, string> = {
-  new: "border-l-blue-500",
-  ready: "border-l-green-500",
-  completed: "border-l-zinc-500",
-  canceled: "border-l-red-500",
+// El estado como luz (status-edge, ver globals.css): cada valor fija las
+// custom properties que la utility lee, en vez de una franja de color plana.
+const statusEdgeStyle: Record<string, React.CSSProperties> = {
+  new: { "--status-color": "var(--status-new)", "--status-tint": "var(--status-new-tint)" } as React.CSSProperties,
+  ready: { "--status-color": "var(--status-ready)", "--status-tint": "var(--status-ready-tint)" } as React.CSSProperties,
+  completed: { "--status-color": "var(--status-completed)", "--status-tint": "var(--status-completed-tint)" } as React.CSSProperties,
+  canceled: { "--status-color": "var(--status-canceled)", "--status-tint": "var(--status-canceled-tint)" } as React.CSSProperties,
 };
 
 interface OrderCardProps {
@@ -119,15 +121,13 @@ export function OrderCard({
   const status = visualStatus ?? order.status;
   const config = statusConfig[status as keyof typeof statusConfig];
 
-  console.log(order);
-
   return (
     <Card
       className={cn(
-        "transition-all hover:shadow-md cursor-grab bg-card border-l-4",
-        statusBorderColor[status] ?? "border-l-border",
+        "status-edge transition-all hover:shadow-md cursor-grab",
         isDragging && "rotate-1",
       )}
+      style={statusEdgeStyle[status]}
     >
       <CardContent className="p-4">
         {/* Delivery time banner — shown at the very top when available */}
@@ -144,7 +144,7 @@ export function OrderCard({
         {/* Header: order number + time ago + status badge + payment */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <p className="font-mono text-lg font-semibold">
+            <p className="text-headline text-muted-foreground">
               #{order.order_number}
             </p>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -178,8 +178,8 @@ export function OrderCard({
               className={cn(
                 "rounded-full p-2 transition-colors cursor-pointer",
                 order.is_paid
-                  ? "bg-green-100 text-green-600 hover:bg-green-200"
-                  : "bg-red-100 text-red-600 hover:bg-red-200",
+                  ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
+                  : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
               )}
               title={
                 order.is_paid
@@ -202,7 +202,7 @@ export function OrderCard({
         <div className="flex items-center justify-between pt-3 border-t">
           {!isEditing ? (
             <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold font-mono">
+              <p className="text-amount numeric vibrant">
                 {formatCurrency(order.total_amount)}
               </p>
               {canEdit && (
@@ -279,7 +279,7 @@ export function OrderCard({
               <button
                 onClick={handleSaveEdit}
                 disabled={quickPatch.isPending}
-                className="p-1.5 rounded text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 cursor-pointer"
+                className="p-1.5 rounded text-[var(--status-paid)] hover:bg-[var(--status-paid-tint)] transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <Check className="h-4 w-4" />
               </button>
