@@ -52,18 +52,25 @@ export default async function DashboardLayout({
           ) : (
             <SidebarProvider defaultOpen={false}>
               <SidebarLayout activeServiceKeys={activeServiceKeys}>{children}</SidebarLayout>
-              <Toaster
-                richColors
-                position="top-right"
-                theme="dark"
-                toastOptions={{
-                  classNames: {
-                    toast: "material-thick !text-foreground",
-                  },
-                }}
-              />
             </SidebarProvider>
           )}
+          {/* Toaster afuera de SidebarProvider a proposito (jebbs-dashboard@
+              b40eafa): sonner no esta aplicando su propio position:fixed en
+              este arbol, y mientras esta seccion quedaba adentro del flex de
+              sidebar-wrapper, contaba como un tercer hijo en fila y estiraba
+              TODO el layout mas alla del viewport -- scroll doble en cada
+              pagina. Afuera del SidebarProvider, aunque el position:fixed
+              siga sin aplicar, ya no puede volver a inflar ese contenedor. */}
+          <Toaster
+            richColors
+            position="top-right"
+            theme="dark"
+            toastOptions={{
+              classNames: {
+                toast: "material-thick !text-foreground",
+              },
+            }}
+          />
           <Analytics />
         </VerticalProvider>
       </QueryProvider>

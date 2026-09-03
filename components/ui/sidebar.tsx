@@ -139,7 +139,16 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            'group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full',
+            // h-svh (no min-h-svh) + overflow-hidden a proposito: el shell
+            // nunca debe poder scrollear a nivel documento -- cada pagina
+            // ya trae su propio contenedor "flex-1 overflow-auto" adentro.
+            // Con min-height, cualquier desajuste de layout (un hijo un
+            // pixel mas alto que el viewport, lo que sea) se traduce en un
+            // scroll de pagina fantasma ademas del scroll interno real
+            // ("doble scroll"). h-svh + overflow-hidden lo hace imposible
+            // por construccion, sin depender de encontrar la causa exacta
+            // de cada desajuste futuro.
+            'group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex h-svh w-full overflow-hidden',
             className,
           )}
           {...props}
