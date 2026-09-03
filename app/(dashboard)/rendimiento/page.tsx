@@ -272,7 +272,7 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <section className="flex h-screen flex-col">
+    <section className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.rendimiento.title}
         subtitle={vertical.labels.pages.rendimiento.subtitle}

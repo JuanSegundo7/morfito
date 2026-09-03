@@ -259,7 +259,7 @@ export default function PricingPage() {
   const isLoading = burgersLoading || extrasLoading;
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.precios.title}
         subtitle={vertical.labels.pages.precios.subtitle}

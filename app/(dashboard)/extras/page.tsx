@@ -151,7 +151,7 @@ export default function ExtrasPage() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.extras.title}
         subtitle={vertical.labels.pages.extras.subtitle}

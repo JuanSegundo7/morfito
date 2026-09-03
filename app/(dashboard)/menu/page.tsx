@@ -245,7 +245,7 @@ export default function MenuPage() {
   /* ================= RENDER ================= */
 
   return (
-    <section className="flex h-screen flex-col">
+    <section className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.menu.title}
         subtitle={vertical.labels.pages.menu.subtitle}

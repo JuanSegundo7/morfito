@@ -152,7 +152,7 @@ export default function OrdersHistoryPage() {
   };
 
   return (
-    <section className="flex h-full flex-col">
+    <section className="flex flex-1 min-h-0 flex-col">
       <Header
         title="Historial de Pedidos"
         subtitle="Revisa todos los pedidos"
