@@ -2,9 +2,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
-import Image from "next/image";
 import { PrintServiceIndicator } from "../order-wizard/components/print-service";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
@@ -26,13 +25,13 @@ export function Header({
   extraActions,
 }: HeaderProps) {
   return (
-    <header className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:p-6 ios-glass rounded-md shrink-0 bg-card">
+    <header className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between md:p-6 material-regular rounded-2xl shrink-0 sticky top-0 z-30">
       <div className="flex items-center gap-3">
         <SidebarTrigger className="md:hidden" />
         <div>
-          <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+          <h1 className="text-title text-foreground">{title}</h1>
           {subtitle && (
-            <p className="hidden text-sm text-muted-foreground sm:block">{subtitle}</p>
+            <p className="hidden text-footnote text-muted-foreground sm:block">{subtitle}</p>
           )}
         </div>
       </div>
@@ -50,24 +49,6 @@ export function Header({
           </Button>
         )}
       </div>
-      {/* {onRefresh && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="bg-card"
-        >
-          <RefreshCw
-            className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")}
-          />
-          Actualizar
-        </Button>
-      )} */}
     </header>
   );
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
 }
