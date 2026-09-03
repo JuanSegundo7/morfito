@@ -177,14 +177,14 @@ export function CustomerDetail({
             </>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">{customer.name}</p>
+              <p className="text-subheadline font-medium text-foreground">{customer.name}</p>
               {customer.phone ? (
-                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                <p className="text-subheadline text-muted-foreground flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5" />
                   {customer.phone}
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground italic">Sin teléfono</p>
+                <p className="text-subheadline text-muted-foreground italic">Sin teléfono</p>
               )}
             </div>
           )}
@@ -194,7 +194,7 @@ export function CustomerDetail({
       {/* Addresses */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Direcciones</h2>
+          <h2 className="text-subheadline font-semibold">Direcciones</h2>
           <Button
             size="sm"
             variant="outline"
@@ -209,10 +209,10 @@ export function CustomerDetail({
         </div>
 
         {isLoadingAddresses ? (
-          <p className="text-sm text-muted-foreground">Cargando direcciones...</p>
+          <p className="text-subheadline text-muted-foreground">Cargando direcciones...</p>
         ) : addresses.length === 0 ? (
           <Card className="bg-card">
-            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+            <CardContent className="p-6 text-center text-subheadline text-muted-foreground">
               Este cliente no tiene direcciones guardadas
             </CardContent>
           </Card>
@@ -225,18 +225,18 @@ export function CustomerDetail({
                     <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {address.label && (
-                          <span className="font-medium text-sm">{address.label}</span>
+                          <span className="font-medium text-subheadline">{address.label}</span>
                         )}
                         {address.is_default && (
-                          <Badge variant="secondary" className="text-xs gap-1">
+                          <Badge variant="secondary" className="text-caption gap-1">
                             <Star className="h-2.5 w-2.5 fill-current" />
                             Predeterminada
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">{address.address}</p>
+                      <p className="text-subheadline text-muted-foreground truncate">{address.address}</p>
                       {address.notes && (
-                        <p className="text-xs text-muted-foreground/70 italic">{address.notes}</p>
+                        <p className="text-caption text-muted-foreground/70 italic">{address.notes}</p>
                       )}
                     </div>
 
@@ -245,7 +245,7 @@ export function CustomerDetail({
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-7 px-2 text-xs"
+                          className="h-7 px-2 text-caption"
                           onClick={() => handleSetDefault(address.id)}
                           disabled={setDefault.isPending}
                         >

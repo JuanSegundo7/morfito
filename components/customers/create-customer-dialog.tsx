@@ -96,7 +96,7 @@ export function CreateCustomerDialog({
 
           <Separator />
 
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          <p className="text-overline text-muted-foreground uppercase">
             Dirección (opcional)
           </p>
 

@@ -275,7 +275,7 @@ export default function PricingPage() {
             <div className="flex items-center justify-between rounded-lg bg-secondary/30 p-3">
               <div>
                 <p className="font-medium">Costo de delivery por defecto</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   Se usa como valor inicial al crear un pedido con envío
                 </p>
               </div>
@@ -330,6 +330,11 @@ export default function PricingPage() {
 
         {/* Cost/stock/finance porting, PR2: order sources (sales channels) +
             their commission rates */}
+        {/* NOTA: este bloque no paso por la migracion tipografica de
+            jebbs-dashboard@42eecdb -- la logica de negocio (multi-canal,
+            editable) diverge demasiado de lo que jebbs tenia en ese punto
+            (un solo canal hardcodeado) como para mezclar con seguridad.
+            Migrar text-xs -> text-caption aca en una pasada dedicada aparte. */}
         <Card className="bg-card">
           <CardHeader>
             <CardTitle>Canales de venta y comisiones</CardTitle>
@@ -469,7 +474,7 @@ export default function PricingPage() {
                           <div className="flex items-center gap-3">
                             <span className="font-medium">{burger.name}</span>
                             {!burger.is_available && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-caption">
                                 No disponible
                               </Badge>
                             )}
@@ -479,13 +484,13 @@ export default function PricingPage() {
                               const margin = computeMargin(burger.base_price, cost.total);
                               return (
                                 <span
-                                  className="text-xs text-muted-foreground"
+                                  className="text-caption text-muted-foreground"
                                   title={cost.incomplete ? "Receta incompleta: hay insumos faltantes o inactivos" : undefined}
                                 >
                                   Costo: {formatCurrency(cost.total)}
                                   {margin.marginPct !== null && ` · Margen: ${margin.marginPct.toFixed(0)}%`}
                                   {cost.incomplete && (
-                                    <Badge variant="secondary" className="ml-1 text-xs text-status-ready">
+                                    <Badge variant="secondary" className="ml-1 text-caption text-status-ready">
                                       Receta incompleta
                                     </Badge>
                                   )}
@@ -620,7 +625,7 @@ export default function PricingPage() {
                             <div className="flex items-center gap-3">
                               <span className="font-medium">{extra.name}</span>
                               {!extra.is_available && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-caption">
                                   No disponible
                                 </Badge>
                               )}
