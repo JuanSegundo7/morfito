@@ -182,7 +182,7 @@ export function OrderCard({
         {/* Customer name */}
         <div className="flex items-center gap-1.5">
           <User className="h-4 w-4 text-muted-foreground" />
-          <span className="text-callout vibrant">{order.customer_name}</span>
+          <span className="text-callout vibrant font-medium">{order.customer_name}</span>
         </div>
 
         {/* Footer: total + actions */}

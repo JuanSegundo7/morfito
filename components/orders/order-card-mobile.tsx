@@ -169,7 +169,7 @@ export function OrderCardMobile({
         {/* META + TOTAL */}
         <div className="flex items-end justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-1 text-callout vibrant">
+            <div className="flex items-center gap-1 text-callout vibrant font-medium">
               <User className="h-3.5 w-3.5 text-muted-foreground" />
               {order.customer_name}
             </div>
