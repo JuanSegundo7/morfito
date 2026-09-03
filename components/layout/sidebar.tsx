@@ -103,16 +103,18 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
           />
           <div
             className={cn(
+              // leading-tight deliberado: stack de 2 lineas (Jebbs / Burgers),
+              // el leading normal de headline/subheadline las separa de mas.
               "flex flex-col leading-tight overflow-hidden",
               "transition-all duration-300 ease-in-out",
               "max-w-xs opacity-100",
               "group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0",
             )}
           >
-            <span className={cn(baloo.className, "text-base font-bold tracking-wide whitespace-nowrap")}>
+            <span className={cn(baloo.className, "text-headline font-bold tracking-wide whitespace-nowrap")}>
               Gastro
             </span>
-            <span className={cn(pacifico.className, "text-sm text-(--color-brand) -mt-1 whitespace-nowrap")}>
+            <span className={cn(pacifico.className, "text-subheadline text-(--color-brand) -mt-1 whitespace-nowrap")}>
               Dashboard
             </span>
           </div>
@@ -140,7 +142,7 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
                     >
                       <Link href={item.href}>
                         <item.icon className={cn("size-4 shrink-0", isActive && "text-primary")} />
-                        <span className="text-sm">{item.name}</span>
+                        <span className="text-subheadline">{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -160,7 +162,7 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
               className="rounded-lg transition-all duration-200 h-9 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
             >
               <LogOut className="size-4 shrink-0" />
-              <span className="text-sm">Cerrar sesión</span>
+              <span className="text-subheadline">Cerrar sesión</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
