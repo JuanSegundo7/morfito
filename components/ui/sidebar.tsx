@@ -164,6 +164,12 @@ function Sidebar({
   collapsible?: 'offcanvas' | 'icon' | 'none'
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  // El toggle icon<->expanded anima `width` en sidebar-container (abajo).
+  // Si ese contenedor lleva backdrop-filter (ios-sidebar), recalcular el
+  // blur en cada frame mientras cambia de tamaño es caro — se siente como
+  // pocos frames. data-resizing lo marca solo mientras dura la transición
+  // de width, para que globals.css pueda apagar el blur ahí y nada más.
+  const [isResizing, setIsResizing] = React.useState(false)
 
   if (collapsible === 'none') {
     return (
@@ -228,6 +234,13 @@ function Sidebar({
       />
       <div
         data-slot="sidebar-container"
+        data-resizing={isResizing}
+        onTransitionStart={(e) => {
+          if (e.propertyName === 'width') setIsResizing(true)
+        }}
+        onTransitionEnd={(e) => {
+          if (e.propertyName === 'width') setIsResizing(false)
+        }}
         className={cn(
           'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-300 ease-in-out md:flex',
           side === 'left'
