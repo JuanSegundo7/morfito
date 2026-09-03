@@ -50,7 +50,7 @@ export function SidesStep({
               <Card
                 key={side.id}
                 className={cn(
-                  "cursor-pointer transition-all bg-card relative",
+                  "cursor-pointer transition-all bg-card relative active:scale-[0.98] active:duration-75",
                   qty > 0
                     ? "ring-2 ring-primary border-primary"
                     : "hover:shadow-sm",

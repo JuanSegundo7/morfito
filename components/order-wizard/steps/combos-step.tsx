@@ -118,7 +118,7 @@ export function CombosStep({
                 <Card
                   key={combo.id}
                   className={cn(
-                    "cursor-pointer transition-all bg-card relative",
+                    "cursor-pointer transition-all bg-card relative active:scale-[0.98] active:duration-75",
                     qty > 0
                       ? "ring-2 ring-primary border-primary"
                       : "hover:shadow-sm",
@@ -228,7 +228,7 @@ export function CombosStep({
                             <Card
                               key={burger.id}
                               className={cn(
-                                "cursor-pointer transition-all bg-card relative",
+                                "cursor-pointer transition-all bg-card relative active:scale-[0.98] active:duration-75",
                                 qty > 0
                                   ? "ring-2 ring-primary border-primary animate-in zoom-in-95 duration-300"
                                   : "hover:shadow-sm",

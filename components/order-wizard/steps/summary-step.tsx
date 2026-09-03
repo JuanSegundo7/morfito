@@ -528,16 +528,16 @@ export function SummaryStep({
                   }
                 />
                 {discountAmount > 0 && (
-                  <div className="flex items-center justify-between text-sm rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 p-2">
-                    <span className="text-green-900 dark:text-green-100">
+                  <div className="flex items-center justify-between text-sm rounded-md bg-[var(--status-paid-tint)] border border-[var(--status-paid)]/30 p-2">
+                    <span className="text-[var(--status-paid)]">
                       Descuento aplicado
                       {isFullDiscount && (
-                        <span className="ml-1 text-xs text-green-700 dark:text-green-300">
+                        <span className="ml-1 text-xs text-[var(--status-paid)]/80">
                           (incluye envío)
                         </span>
                       )}
                     </span>
-                    <span className="font-semibold text-green-700 dark:text-green-300">
+                    <span className="font-semibold text-[var(--status-paid)]">
                       -{formatCurrency(isFullDiscount ? orderTotal : discountAmount)}
                     </span>
                   </div>

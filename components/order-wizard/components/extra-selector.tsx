@@ -57,7 +57,7 @@ export function ExtraSelector({
                 "transition-all",
                 isDisabled
                   ? "opacity-40 cursor-not-allowed"
-                  : "cursor-pointer hover:shadow-md",
+                  : "cursor-pointer hover:shadow-md active:scale-[0.98] active:duration-75",
                 isSelected && "ring-2 ring-primary bg-primary/5",
               )}
               onClick={() => !isDisabled && onSelect(extra)}

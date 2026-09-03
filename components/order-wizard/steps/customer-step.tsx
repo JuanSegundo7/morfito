@@ -157,7 +157,7 @@ export function CustomerStep({
                 <Card
                   key={customer.id}
                   className={cn(
-                    "cursor-pointer transition-all hover:shadow-sm bg-card",
+                    "cursor-pointer transition-all hover:shadow-sm bg-card active:scale-[0.98] active:duration-75",
                     isSelected && "ring-2 ring-primary",
                   )}
                   onClick={() => onSelectCustomer(customer)}

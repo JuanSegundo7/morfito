@@ -98,17 +98,17 @@ export function DiscountSection({
 
             {/* Preview del descuento */}
             {discountValue > 0 && (
-              <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3">
+              <div className="bg-[var(--status-paid-tint)] border border-[var(--status-paid)]/30 rounded-md p-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-green-900 dark:text-green-100">
+                  <span className="text-[var(--status-paid)]">
                     Descuento aplicado:
                   </span>
-                  <span className="font-semibold text-green-700 dark:text-green-300">
+                  <span className="font-semibold text-[var(--status-paid)]">
                     -{formatCurrency(discountAmount)}
                   </span>
                 </div>
                 {discountType === "percentage" && (
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  <p className="text-xs text-[var(--status-paid)]/80 mt-1">
                     {discountValue}% de {formatCurrency(subtotal)}
                   </p>
                 )}

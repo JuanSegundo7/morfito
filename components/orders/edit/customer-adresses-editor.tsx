@@ -57,7 +57,7 @@ export function CustomerAddressesEditor({
         {[1, 2].map((i) => (
           <div
             key={i}
-            className="flex items-center gap-2 border rounded-md p-2 bg-white"
+            className="flex items-center gap-2 border rounded-md p-2 bg-card"
           >
             {/* Texto dirección */}
             <Skeleton className="h-4 flex-1 rounded" />
@@ -87,10 +87,10 @@ export function CustomerAddressesEditor({
 
       {/* Nueva dirección */}
       {isAdding && (
-        <div className="flex items-center gap-2 border rounded-md p-2 bg-white">
+        <div className="flex items-center gap-2 border rounded-md p-2 bg-card">
           <input
             autoFocus
-            className="flex-1 text-sm border-none outline-none text-black"
+            className="flex-1 text-sm border-none outline-none bg-transparent text-foreground"
             placeholder="Ingresar dirección"
             value={newAddress}
             onChange={(e) => setNewAddress(e.target.value)}

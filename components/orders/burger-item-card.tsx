@@ -255,7 +255,7 @@ export function SelectedBurgerCard({
                         className={cn(
                           "ml-1 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors cursor-pointer",
                           item.isVeggie
-                            ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-400 dark:border-green-700"
+                            ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] border-[var(--status-paid)]/30"
                             : "bg-card text-muted-foreground border-border hover:bg-accent",
                         )}
                       >
