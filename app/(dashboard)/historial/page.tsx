@@ -181,6 +181,7 @@ export default function OrdersHistoryPage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    size="sm"
                     className="h-10 w-55 justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
