@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Clock,
   Eye,
@@ -13,6 +14,7 @@ import {
   DollarSign,
   ArrowRight,
   Copy,
+  Timer,
   Pencil,
   Check,
   X,
@@ -24,22 +26,7 @@ import { cn } from "@/lib/utils";
 import { formatOrderForWhatsapp } from "@/lib/utils/formatOrderWhatsapp";
 import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
 import { toast } from "sonner";
-
-const statusConfig = {
-  new: { label: "Nuevo", className: "bg-[var(--status-new-tint)] text-[var(--status-new)]" },
-  ready: { label: "Listo", className: "bg-[var(--status-ready-tint)] text-[var(--status-ready)]" },
-  completed: { label: "Completado", className: "bg-[var(--status-completed-tint)] text-[var(--status-completed)]" },
-  canceled: { label: "Cancelado", className: "bg-[var(--status-canceled-tint)] text-[var(--status-canceled)]" },
-};
-
-// El estado como luz (status-edge, ver globals.css): mismo mapeo que
-// order-card.tsx — deben ir en lockstep.
-const statusEdgeStyle: Record<string, React.CSSProperties> = {
-  new: { "--status-color": "var(--status-new)", "--status-tint": "var(--status-new-tint)" } as React.CSSProperties,
-  ready: { "--status-color": "var(--status-ready)", "--status-tint": "var(--status-ready-tint)" } as React.CSSProperties,
-  completed: { "--status-color": "var(--status-completed)", "--status-tint": "var(--status-completed-tint)" } as React.CSSProperties,
-  canceled: { "--status-color": "var(--status-canceled)", "--status-tint": "var(--status-canceled-tint)" } as React.CSSProperties,
-};
+import { statusConfig, statusEdgeStyle } from "@/lib/utils/order-status-style";
 
 interface OrderCardMobileProps {
   order: Order;
@@ -118,19 +105,31 @@ export function OrderCardMobile({
 
   return (
     // ✅ Eliminado "lg:hidden" — lo maneja el wrapper en SortableOrderCard
-    <Card className="status-edge" style={statusEdgeStyle[status]}>
-      <CardContent className="space-y-4">
+    <Card interactive className="status-edge p-0" style={statusEdgeStyle[status]}>
+      <CardContent className="p-4 space-y-3">
+        {/* Delivery time banner — en lockstep con order-card.tsx (antes
+            faltaba acá: gap funcional, no solo visual) */}
+        {order.delivery_time && (
+          <div className="flex items-center gap-2 rounded-md material-thin border-[var(--accent-tint-32)] px-3 py-1.5">
+            <Timer className="h-4 w-4 text-[var(--accent-brand)] shrink-0" />
+            <span className="text-callout font-semibold text-[var(--accent-brand)]">
+              {order.delivery_type === "delivery" ? "Entrega:" : "Retira:"}{" "}
+              {order.delivery_time}
+            </span>
+          </div>
+        )}
+
         {/* HEADER */}
         <div className="flex items-center justify-between">
-          <p className="text-headline text-muted-foreground">
+          <p className="text-headline vibrant numeric">
             #{order.order_number}
           </p>
 
           <div className="flex items-center gap-2">
             <Button
               size="icon-sm"
-              variant="outline"
-              className="bg-card rounded-full"
+              variant="ghost"
+              className="cursor-pointer rounded-full"
               onClick={handleCopy}
               title="Copiar para WhatsApp"
             >
@@ -139,8 +138,8 @@ export function OrderCardMobile({
 
             <Button
               size="icon-sm"
-              variant="outline"
-              className="bg-card rounded-full"
+              variant="ghost"
+              className="cursor-pointer rounded-full"
               onClick={handleCopyDelivery}
               title="Copiar para delivery"
             >
@@ -150,11 +149,16 @@ export function OrderCardMobile({
             <button
               onClick={handlePaymentToggle}
               className={cn(
-                "rounded-full p-2 transition-colors",
+                "rounded-full p-2 transition-colors cursor-pointer",
                 order.is_paid
                   ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
                   : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
               )}
+              title={
+                order.is_paid
+                  ? "Pagado - Click para marcar como no pagado"
+                  : "No pagado - Click para marcar como pagado"
+              }
             >
               <DollarSign className="h-4 w-4" />
             </button>
@@ -164,14 +168,14 @@ export function OrderCardMobile({
 
         {/* META + TOTAL */}
         <div className="flex items-end justify-between gap-4">
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <User className="h-3.5 w-3.5" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-callout vibrant">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
               {order.customer_name}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 text-footnote text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
-              {getRelativeTime(order.created_at)}
+              <span className="numeric">{getRelativeTime(order.created_at)}</span>
             </div>
           </div>
 
@@ -193,14 +197,14 @@ export function OrderCardMobile({
               </div>
             ) : (
               <div className="flex flex-col items-end gap-2">
-                <input
+                <Input
                   type="number"
                   min="0"
                   value={draftAmount}
                   onChange={(e) => setDraftAmount(e.target.value)}
                   onPointerDown={(e) => e.stopPropagation()}
                   autoFocus
-                  className="w-24 h-8 rounded-md border border-input bg-background px-2 text-right text-base font-bold focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-24 h-8 px-2 text-right text-base font-bold"
                 />
                 <div className="flex gap-1">
                   {(["cash", "transfer"] as const).map((m) => (

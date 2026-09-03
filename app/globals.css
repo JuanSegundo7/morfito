@@ -383,7 +383,11 @@
   border-top-color: var(--specular);
 }
 
-/* Escalera de profundidad (components/ui/card.tsx `depth` prop). */
+/* Escalera de profundidad (components/ui/card.tsx `depth` prop):
+   material-well (−1) < ios-glass/shadow-sm (0, "raised", el default)
+   < hover/shadow-md (+1, "hero" o :hover de una card `interactive`)
+   < drag overlay/shadow-xl + status glow (+2). Badge se queda en 0
+   sombra a propósito (badge.tsx:8 — un chip de 20px no necesita peso). */
 @utility ios-shadow-sm {
   box-shadow: var(--shadow-sm);
 }
@@ -408,6 +412,27 @@
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-lg);
   }
+}
+
+/* Scroll edge effect (§12): el contenido se desvanece hacia el chrome
+   flotante en vez de cortarse con un divider de 1px. --edge-top default
+   0px = sin efecto en reposo (nada se desvanece si no hay nada scrolleado
+   arriba); el consumidor lo sube con un onScroll. mask-image crea un
+   backdrop-root — nada bajo scroll-edge-y puede usar material-* (mataría
+   cualquier backdrop-filter real de un descendiente). */
+@utility scroll-edge-y {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--edge-top, 0px),
+    black calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+/* Numérico tabular — cifras de dinero que no bailan al cambiar. */
+@utility numeric {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Vibrancy (§12): sobre material translúcido el texto quiere más contraste,
@@ -435,6 +460,7 @@
     width: 3px;
     background: var(--status-color);
     box-shadow: 0 0 16px -2px var(--status-color);
+    transition: width 200ms, background-color 260ms, box-shadow 260ms;
   }
   &::after {
     content: "";
@@ -442,7 +468,28 @@
     inset: 0;
     pointer-events: none;
     background: radial-gradient(130% 90% at 0% 0%, var(--status-tint), transparent 62%);
+    transition: background 260ms;
   }
+  /* El borde se ensancha bajo el cursor — la luz reacciona, no es un
+     adorno estático. overflow:hidden de arriba clipea descendientes,
+     nunca el box-shadow propio del elemento, así que el glow escapa igual. */
+  &:hover::before {
+    width: 4px;
+    box-shadow: 0 0 22px -2px var(--status-color);
+  }
+}
+
+/* Glow de drop-target (§13): la cuarta aplicación del mismo vocabulario
+   de "luz en el canto" (status-edge, nav-rail-active). Lee --status-color
+   fijado inline por el consumidor — "transparent" lo apaga. Se usa
+   transition-[box-shadow] en vez de transition-colors porque esta última
+   no cubre box-shadow en Tailwind v4 (el bug que hacía que el ring
+   apareciera/desapareciera de golpe en vez de desvanecerse). */
+@utility drop-glow {
+  box-shadow:
+    inset 0 0 0 1px var(--status-color, transparent),
+    0 0 32px -8px var(--status-color, transparent);
+  transition: box-shadow 400ms ease-out;
 }
 
 /* Mismo vocabulario de "luz en el canto" que status-edge, pero fijo al

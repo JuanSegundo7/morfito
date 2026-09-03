@@ -280,7 +280,11 @@ export default function MenuPage() {
               <Card
                 key={burger.id}
                 className={cn(
-                  "group overflow-hidden transition-all hover:shadow-lg pt-0 bg-card",
+                  // Sombra de hover: la hereda de Card (A1, depth="raised"
+                  // por default). Antes acá se pisaba con hover:shadow-lg
+                  // — la clase default de Tailwind, no registrada en el
+                  // theme, invisible sobre #08090c.
+                  "group overflow-hidden pt-0 bg-card",
                   !burger.is_available && "opacity-60",
                 )}
               >

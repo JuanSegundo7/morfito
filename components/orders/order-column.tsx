@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Order, OrderStatus } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/format";
@@ -14,8 +15,8 @@ import { cn } from "@/lib/utils";
 import { cardPresence, springs } from "@/lib/motion";
 import { SortableOrderCard } from "./sorteable-order-card";
 
-// Punto de estado y glow de drop-target derivados del token, ya no de un
-// string de color crudo pasado por el dashboard.
+// Punto de estado, derivado del token, ya no de un string de color crudo
+// pasado por el dashboard.
 const statusDotClass: Record<string, string> = {
   new: "bg-[var(--status-new)]",
   ready: "bg-[var(--status-ready)]",
@@ -23,11 +24,15 @@ const statusDotClass: Record<string, string> = {
   canceled: "bg-[var(--status-canceled)]",
 };
 
-const statusRingClass: Record<string, string> = {
-  new: "ring-[var(--status-new)]",
-  ready: "ring-[var(--status-ready)]",
-  completed: "ring-[var(--status-completed)]",
-  canceled: "ring-[var(--status-canceled)]",
+// El color real (no la clase) para --status-color de drop-glow — "transparent"
+// lo apaga sin tener que sacar la clase entera (así el transition del
+// utility no se pierde al togglear, evitando el bug del ring que aparecía
+// de golpe en vez de desvanecerse).
+const statusColorVar: Record<string, string> = {
+  new: "var(--status-new)",
+  ready: "var(--status-ready)",
+  completed: "var(--status-completed)",
+  canceled: "var(--status-canceled)",
 };
 
 interface OrderColumnProps {
@@ -54,30 +59,51 @@ export function OrderColumn({
     id: status,
   });
 
-  // Causalidad y armonía (§13): al soltar una tarjeta acá, el hairline
-  // de la columna flashea su color de estado por ~260ms. Se detecta un
-  // "drop" como un incremento de conteo, no un evento propio — la
-  // columna no ve onDragEnd, solo el resultado de la mutación.
+  // Causalidad y armonía (§13): al soltar una tarjeta acá, drop-glow
+  // flashea el color de estado de la columna. Se detecta un "drop" como
+  // un incremento de conteo, no un evento propio — la columna no ve
+  // onDragEnd, solo el resultado de la mutación.
   const prevCountRef = useRef(filteredOrders.length);
   const [flashing, setFlashing] = useState(false);
 
   useEffect(() => {
     if (filteredOrders.length > prevCountRef.current) {
       setFlashing(true);
-      const t = setTimeout(() => setFlashing(false), 260);
+      // 420ms, no 260ms: si el timer y la transición del glow duraran lo
+      // mismo, el fade-out empezaría apenas terminara el fade-in y nunca
+      // se vería el brillo completo.
+      const t = setTimeout(() => setFlashing(false), 420);
       prevCountRef.current = filteredOrders.length;
       return () => clearTimeout(t);
     }
     prevCountRef.current = filteredOrders.length;
   }, [filteredOrders.length]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef(0);
+
+  // scroll-edge-y (globals.css) lee --edge-top: en reposo es 0px (sin
+  // efecto), y sube a 14px apenas hay algo scrolleado arriba — así el
+  // fade solo aparece cuando de verdad hay contenido oculto arriba.
+  const handleScroll = () => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      const el = scrollRef.current;
+      if (!el) return;
+      el.style.setProperty("--edge-top", `${Math.min(14, el.scrollTop)}px`);
+    });
+  };
+
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        "flex flex-col min-h-0 rounded-2xl material-well transition-colors duration-[260ms]",
-        (isOver || flashing) && cn("ring-2", statusRingClass[status] ?? "ring-primary/40"),
-      )}
+      className="flex flex-col min-h-0 rounded-2xl material-well drop-glow"
+      style={
+        {
+          "--status-color": isOver || flashing ? statusColorVar[status] : "transparent",
+        } as React.CSSProperties
+      }
     >
       <div className="shrink-0 flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
@@ -109,6 +135,8 @@ export function OrderColumn({
         </div>
       </div>
       <div
+        ref={scrollRef}
+        onScroll={handleScroll}
         className="
       flex-1 min-h-0 overflow-y-auto p-4 space-y-6 scroll-edge-y
       max-h-[calc(100vh-240px)]

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Clock,
   Eye,
@@ -26,22 +27,7 @@ import { cn } from "@/lib/utils";
 import { formatOrderForWhatsapp } from "@/lib/utils/formatOrderWhatsapp";
 import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
 import { toast } from "sonner";
-
-const statusConfig = {
-  new: { label: "Nuevo", className: "bg-[var(--status-new-tint)] text-[var(--status-new)]" },
-  ready: { label: "Listo", className: "bg-[var(--status-ready-tint)] text-[var(--status-ready)]" },
-  completed: { label: "Completado", className: "bg-[var(--status-completed-tint)] text-[var(--status-completed)]" },
-  canceled: { label: "Cancelado", className: "bg-[var(--status-canceled-tint)] text-[var(--status-canceled)]" },
-};
-
-// El estado como luz (status-edge, ver globals.css): cada valor fija las
-// custom properties que la utility lee, en vez de una franja de color plana.
-const statusEdgeStyle: Record<string, React.CSSProperties> = {
-  new: { "--status-color": "var(--status-new)", "--status-tint": "var(--status-new-tint)" } as React.CSSProperties,
-  ready: { "--status-color": "var(--status-ready)", "--status-tint": "var(--status-ready-tint)" } as React.CSSProperties,
-  completed: { "--status-color": "var(--status-completed)", "--status-tint": "var(--status-completed-tint)" } as React.CSSProperties,
-  canceled: { "--status-color": "var(--status-canceled)", "--status-tint": "var(--status-canceled-tint)" } as React.CSSProperties,
-};
+import { statusConfig, statusEdgeStyle } from "@/lib/utils/order-status-style";
 
 interface OrderCardProps {
   order: Order;
@@ -123,18 +109,19 @@ export function OrderCard({
 
   return (
     <Card
+      interactive
       className={cn(
-        "status-edge transition-all hover:shadow-md cursor-grab",
-        isDragging && "rotate-1",
+        "status-edge cursor-grab p-0",
+        isDragging && "opacity-40 saturate-50 shadow-none",
       )}
       style={statusEdgeStyle[status]}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-3">
         {/* Delivery time banner — shown at the very top when available */}
         {order.delivery_time && (
-          <div className="flex items-center gap-2 mb-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-1.5">
-            <Timer className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-2 rounded-md material-thin border-[var(--accent-tint-32)] px-3 py-1.5">
+            <Timer className="h-4 w-4 text-[var(--accent-brand)] shrink-0" />
+            <span className="text-callout font-semibold text-[var(--accent-brand)]">
               {order.delivery_type === "delivery" ? "Entrega:" : "Retira:"}{" "}
               {order.delivery_time}
             </span>
@@ -142,14 +129,14 @@ export function OrderCard({
         )}
 
         {/* Header: order number + time ago + status badge + payment */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <p className="text-headline text-muted-foreground">
+            <p className="text-headline vibrant numeric">
               #{order.order_number}
             </p>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-footnote text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span>{getRelativeTime(order.created_at)}</span>
+              <span className="numeric">{getRelativeTime(order.created_at)}</span>
             </div>
           </div>
 
@@ -193,9 +180,9 @@ export function OrderCard({
         </div>
 
         {/* Customer name */}
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-          <User className="h-4 w-4" />
-          <span>{order.customer_name}</span>
+        <div className="flex items-center gap-1.5">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="text-callout vibrant">{order.customer_name}</span>
         </div>
 
         {/* Footer: total + actions */}
@@ -217,14 +204,14 @@ export function OrderCard({
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={draftAmount}
                 onChange={(e) => setDraftAmount(e.target.value)}
                 onPointerDown={(e) => e.stopPropagation()}
                 autoFocus
-                className="w-28 h-8 rounded-md border border-input bg-background px-2 text-lg font-bold focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-28 h-8 px-2 text-lg font-bold"
               />
               <div className="flex gap-1.5">
                 {(["cash", "transfer"] as const).map((m) => (
@@ -276,27 +263,33 @@ export function OrderCard({
             </div>
           ) : (
             <div className="flex items-center gap-1.5 self-start">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleSaveEdit}
                 disabled={quickPatch.isPending}
-                className="p-1.5 rounded text-[var(--status-paid)] hover:bg-[var(--status-paid-tint)] transition-colors disabled:opacity-50 cursor-pointer"
+                className="text-[var(--status-paid)] hover:bg-[var(--status-paid-tint)]"
               >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
+                <Check className="mr-1 h-4 w-4" />
+                Guardar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleCancelEdit}
-                className="p-1.5 rounded text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                className="text-destructive hover:bg-destructive/10"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X className="mr-1 h-4 w-4" />
+                Cancelar
+              </Button>
             </div>
           )}
         </div>
 
         {/* Status advance button */}
         {!isEditing && (
-          <div className="mt-3 w-full flex items-center justify-between">
-            <div>
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-2">
               {order.payment_method === "cash" && (
                 <Badge variant="outline" className="text-xs gap-1 bg-card">
                   💵 Efectivo

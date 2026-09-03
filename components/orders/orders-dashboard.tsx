@@ -24,6 +24,8 @@ import {
 import {
   DndContext,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
   DragOverlay,
   PointerSensor,
   useSensor,
@@ -72,6 +74,15 @@ export function OrdersDashboard() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  // Estado de la columna sobre la que se sostiene el drag ahora mismo — no
+  // el estado original de la card. Alimenta visualStatus del DragOverlay
+  // para que el borde de luz cambie de color ANTES de soltar (§13:
+  // causalidad real, no decorativa).
+  const [overStatus, setOverStatus] = useState<OrderStatus | null>(null);
+  // Punto donde se agarró la card, en % relativos a su propio rect — ancla
+  // el transform-origin del DragOverlay (§7: el lift tiene que originarse
+  // donde tocó el dedo, no en el centro abstracto de la card).
+  const [dragOrigin, setDragOrigin] = useState("50% 50%");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
 
@@ -93,13 +104,33 @@ export function OrdersDashboard() {
     return a.delivery_time.localeCompare(b.delivery_time);
   });
 
-  const handleDragStart = (event: any) => {
+  const handleDragStart = (event: DragStartEvent) => {
     const order = sortedOrders.find((o) => o.id === event.active.id);
     setActiveOrder(order || null);
+    setOverStatus(null);
+
+    // Origen del transform anclado a donde se agarró la card (§7) — no al
+    // centro. rect es el bounding box inicial de la card; activatorEvent
+    // es el pointer/mouse event nativo que arrancó el drag.
+    const rect = event.active.rect.current.initial;
+    const activatorEvent = event.activatorEvent;
+    if (rect && "clientX" in activatorEvent) {
+      const { clientX, clientY } = activatorEvent as PointerEvent;
+      const x = ((clientX - rect.left) / rect.width) * 100;
+      const y = ((clientY - rect.top) / rect.height) * 100;
+      setDragOrigin(`${x}% ${y}%`);
+    } else {
+      setDragOrigin("50% 50%");
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverStatus(event.over ? (event.over.id as OrderStatus) : null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setOverStatus(null);
 
     if (!over) {
       setActiveOrder(null);
@@ -225,6 +256,7 @@ export function OrdersDashboard() {
               <DndContext
                 sensors={sensors}
                 onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
               >
                 <div className="flex-1 min-h-0">
@@ -312,7 +344,10 @@ export function OrdersDashboard() {
                   </div>
                 </div>
 
-                <DragOverlay adjustScale={false}>
+                <DragOverlay
+                  adjustScale={false}
+                  dropAnimation={{ duration: 260, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }}
+                >
                   {activeOrder ? (
                     // will-change: transform va SOLO acá (§11) — es lo único
                     // que se mueve a cada frame del drag.
@@ -320,17 +355,18 @@ export function OrdersDashboard() {
                       className="pointer-events-none rounded-2xl"
                       style={{
                         willChange: "transform",
+                        transformOrigin: dragOrigin,
                         boxShadow: `var(--shadow-xl), 0 0 28px -6px ${
-                          statusGlowVar[activeOrder.status] ?? "var(--status-new)"
+                          statusGlowVar[overStatus ?? activeOrder.status] ?? "var(--status-new)"
                         }`,
                       }}
-                      initial={false}
+                      initial={{ scale: 1, rotate: 0 }}
                       animate={{ scale: 1.03, rotate: -1 }}
                       transition={springs.lift}
                     >
                       <OrderCard
                         order={activeOrder}
-                        visualStatus={activeOrder.status}
+                        visualStatus={overStatus ?? activeOrder.status}
                         onViewDetails={() => {}}
                       />
                     </motion.div>

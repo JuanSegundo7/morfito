@@ -220,7 +220,7 @@ export default function CombosPage() {
               <Card
                 key={combo.id}
                 className={cn(
-                  "group  transition-all bg-card",
+                  "group bg-card",
                   !combo.is_available && "opacity-50",
                 )}
               >
