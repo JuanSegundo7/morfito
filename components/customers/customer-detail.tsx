@@ -108,7 +108,7 @@ export function CustomerDetail({
       <Card className="bg-card">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <CardTitle className="text-base">Información del cliente</CardTitle>
+            <CardTitle>Información del cliente</CardTitle>
             <div className="flex gap-2">
               {!isEditing && (
                 <>
