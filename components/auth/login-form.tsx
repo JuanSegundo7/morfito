@@ -60,16 +60,16 @@ export function LoginForm() {
             height={36}
             className="rounded-xl object-cover"
           />
-          <span className="text-white font-semibold text-lg tracking-tight">Dishflow</span>
+          <span className="text-white font-semibold text-headline tracking-tight">Dishflow</span>
         </div>
 
         <div className="relative z-10 space-y-8">
           <div className="space-y-4">
-            <h1 className="text-4xl font-bold text-white leading-tight">
+            <h1 className="text-display text-white">
               Operaciones simples.<br />
               <span className="text-zinc-400">Resultados reales.</span>
             </h1>
-            <p className="text-zinc-500 text-base leading-relaxed max-w-sm">
+            <p className="text-zinc-500 text-callout leading-relaxed max-w-sm">
               Sistema de gestión para tu restaurante. Pedidos, clientes, métricas y más —
               todo en un solo lugar.
             </p>
@@ -77,7 +77,7 @@ export function LoginForm() {
 
           <ul className="space-y-3">
             {FEATURES.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-zinc-400 text-sm">
+              <li key={text} className="flex items-center gap-3 text-zinc-400 text-subheadline">
                 <div className="h-7 w-7 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
                   <Icon className="h-3.5 w-3.5 text-zinc-300" />
                 </div>
@@ -87,7 +87,7 @@ export function LoginForm() {
           </ul>
         </div>
 
-        <p className="text-zinc-600 text-xs relative z-10">
+        <p className="text-zinc-600 text-caption relative z-10">
           © {new Date().getFullYear()} Dishflow
         </p>
       </div>
@@ -101,13 +101,13 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-white text-2xl font-semibold">Bienvenido</h2>
-            <p className="text-zinc-500 text-sm">Ingresá tus credenciales para continuar.</p>
+            <h2 className="text-white text-title1">Bienvenido</h2>
+            <p className="text-zinc-500 text-subheadline">Ingresá tus credenciales para continuar.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-zinc-300 text-sm">Email</Label>
+              <Label htmlFor="email" className="text-zinc-300 text-subheadline">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -119,7 +119,7 @@ export function LoginForm() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-zinc-300 text-sm">Contraseña</Label>
+              <Label htmlFor="password" className="text-zinc-300 text-subheadline">Contraseña</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -139,7 +139,7 @@ export function LoginForm() {
               </div>
             </div>
 
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-red-400 text-subheadline">{error}</p>}
 
             <Button
               type="submit"

@@ -202,7 +202,7 @@ export default function OrdersHistoryPage() {
                       table: "border-collapse",
                       head_row: "flex gap-2",
                       head_cell:
-                        "w-9 text-muted-foreground font-normal text-sm",
+                        "w-9 text-muted-foreground font-normal text-subheadline",
                       row: "flex gap-2 mt-2",
                       cell: "w-9 h-9 text-center p-0 relative",
                       day: "h-9 w-9 rounded-md hover:bg-accent",
@@ -218,14 +218,14 @@ export default function OrdersHistoryPage() {
 
           <Card className="min-w-50 bg-card">
             <CardContent className="flex items-center justify-between gap-2 p-4">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-subheadline text-muted-foreground">
                 {dateFilter === "today"
                   ? "Ingresos del día"
                   : dateFilter === "week"
                     ? "Ingresos de la semana"
                     : `Ingresos del ${format(customDate, "PPP", { locale: es })}`}
               </span>
-              <span className="text-xl font-bold text-primary">
+              <span className="text-title3 font-bold text-primary">
                 {formatCurrency(totalRevenue)}
               </span>
             </CardContent>
@@ -278,7 +278,7 @@ export default function OrdersHistoryPage() {
                               {formatDateTime(order.created_at)}
                             </TableCell>
                             <TableCell className="flex items-center justify-end gap-2">
-                              <span className={`text-xs font-medium tracking-wide uppercase ${order.payment_method === "cash" ? "text-emerald-600" : "text-blue-600"}`}>
+                              <span className={`text-overline uppercase ${order.payment_method === "cash" ? "text-emerald-600" : "text-blue-600"}`}>
                                 {order.payment_method === "cash" ? "Efectivo" : "Transferencia"}
                               </span>
                               <span className="text-border select-none">|</span>
@@ -340,7 +340,7 @@ export default function OrdersHistoryPage() {
                 {/* 👉 Controles de paginación */}
                 {orders.length > pageSize && (
                   <div className="flex items-center justify-between border-t pt-4">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-subheadline text-muted-foreground">
                       Mostrando {page * pageSize + 1}–
                       {Math.min((page + 1) * pageSize, orders.length)} de{" "}
                       {orders.length} pedidos
@@ -356,7 +356,7 @@ export default function OrdersHistoryPage() {
                         <ChevronLeft className="h-4 w-4" />
                         Anterior
                       </Button>
-                      <span className="text-sm font-medium">
+                      <span className="text-subheadline font-medium">
                         Página {page + 1} de{" "}
                         {Math.ceil(orders.length / pageSize)}
                       </span>
