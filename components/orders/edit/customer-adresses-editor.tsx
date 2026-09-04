@@ -76,7 +76,7 @@ export function CustomerAddressesEditor({
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
-        <h4 className="text-sm font-medium">Direcciones</h4>
+        <h4 className="text-subheadline font-medium">Direcciones</h4>
 
         {!isAdding && (
           <Button size="sm" onClick={() => setIsAdding(true)}>
@@ -90,7 +90,7 @@ export function CustomerAddressesEditor({
         <div className="flex items-center gap-2 border rounded-md p-2 bg-card">
           <input
             autoFocus
-            className="flex-1 text-sm border-none outline-none bg-transparent text-foreground"
+            className="flex-1 text-subheadline border-none outline-none bg-transparent text-foreground"
             placeholder="Ingresar dirección"
             value={newAddress}
             onChange={(e) => setNewAddress(e.target.value)}
@@ -136,7 +136,7 @@ export function CustomerAddressesEditor({
               {isSelected && <Check className="h-3 w-3 text-white" />}
             </div>
 
-            <span className="flex-1 text-sm">{addr.address}</span>
+            <span className="flex-1 text-subheadline">{addr.address}</span>
 
             {/* Default */}
             <Button

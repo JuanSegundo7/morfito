@@ -114,11 +114,11 @@ export function OrderColumn({
         </div>
         <div className="flex items-center gap-2">
           {columnRevenue > 0 && (
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="text-caption text-muted-foreground font-mono">
               {formatCurrency(columnRevenue)}
             </span>
           )}
-          <span className="relative inline-flex h-5 min-w-5 items-center justify-center overflow-hidden rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold">
+          <span className="relative inline-flex h-5 min-w-5 items-center justify-center overflow-hidden rounded-full bg-muted px-2.5 py-0.5 text-caption font-semibold">
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.span
                 key={filteredOrders.length}
@@ -149,7 +149,7 @@ export function OrderColumn({
         >
           {filteredOrders.length === 0 ? (
             <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-sm text-muted-foreground">Sin pedidos</p>
+              <p className="text-subheadline text-muted-foreground">Sin pedidos</p>
             </div>
           ) : (
             // popLayout: la tarjeta que sale se saca del flujo antes de
@@ -180,7 +180,7 @@ export function OrderColumn({
           {/* hint iOS-style — solo en la columna "new", no duplicado en ambas */}
           {status === "new" && filteredOrders.length > 0 && (
             <div className="pointer-events-none mt-4 flex justify-center">
-              <div className=" px-3 py-1 text-xs text-muted-foreground">
+              <div className=" px-3 py-1 text-caption text-muted-foreground">
                 - Arrastrá las tarjetas para cambiar su estado -
               </div>
             </div>

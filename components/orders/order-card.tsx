@@ -211,7 +211,7 @@ export function OrderCard({
                 onChange={(e) => setDraftAmount(e.target.value)}
                 onPointerDown={(e) => e.stopPropagation()}
                 autoFocus
-                className="w-28 h-8 px-2 text-lg font-bold"
+                className="w-28 h-8 px-2 text-headline font-bold"
               />
               <div className="flex gap-1.5">
                 {(["cash", "transfer"] as const).map((m) => (
@@ -222,7 +222,7 @@ export function OrderCard({
                       setDraftMethod(m);
                     }}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer",
+                      "px-2.5 py-1 rounded-md text-caption font-medium border transition-colors cursor-pointer",
                       draftMethod === m
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card text-muted-foreground border-border hover:bg-accent",
@@ -291,7 +291,7 @@ export function OrderCard({
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2">
               {order.payment_method === "cash" && (
-                <Badge variant="outline" className="text-xs gap-1 bg-card">
+                <Badge variant="outline" className="text-caption gap-1 bg-card">
                   💵 Efectivo
                 </Badge>
               )}

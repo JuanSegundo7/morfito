@@ -103,8 +103,8 @@ export function EditCustomerModal({
               <User className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-base">Editar cliente</DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <DialogTitle className="text-callout">Editar cliente</DialogTitle>
+              <p className="text-caption text-muted-foreground mt-0.5">
                 {customer.name}
               </p>
             </div>
@@ -117,14 +117,14 @@ export function EditCustomerModal({
           <div className="px-6 py-5 space-y-4">
             <div className="flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="text-overline uppercase text-muted-foreground">
                 Datos personales
               </span>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Nombre</label>
+                <label className="text-subheadline font-medium">Nombre</label>
                 <div className="relative">
                   <Input
                     value={name}
@@ -139,10 +139,10 @@ export function EditCustomerModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium flex items-center gap-1.5">
+                <label className="text-subheadline font-medium flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                   Teléfono
-                  <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+                  <span className="text-caption text-muted-foreground font-normal">(opcional)</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -158,7 +158,7 @@ export function EditCustomerModal({
               </div>
 
               {isDirty && (
-                <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-3 py-2 text-caption text-amber-700 dark:text-amber-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                   Hay cambios sin guardar en los datos personales
                 </div>
@@ -172,10 +172,10 @@ export function EditCustomerModal({
           <div className="px-6 py-5 space-y-4">
             <div className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="text-overline uppercase text-muted-foreground">
                 Direcciones
               </span>
-              <span className="ml-auto text-xs text-muted-foreground italic">
+              <span className="ml-auto text-caption text-muted-foreground italic">
                 Se guardan automáticamente
               </span>
             </div>

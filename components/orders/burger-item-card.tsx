@@ -131,7 +131,7 @@ export function SelectedBurgerCard({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="font-medium">{item.burger.name}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-subheadline text-muted-foreground">
               {formatCurrency(item.burger.base_price)}
             </p>
           </div>
@@ -146,7 +146,7 @@ export function SelectedBurgerCard({
               <Minus className="h-3 w-3" />
             </Button>
 
-            <span className="w-6 text-center text-sm font-medium">
+            <span className="w-6 text-center text-subheadline font-medium">
               {item.quantity}
             </span>
 
@@ -174,7 +174,7 @@ export function SelectedBurgerCard({
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 h-auto p-2 text-xs text-primary"
+          className="mt-2 h-auto p-2 text-caption text-primary"
           onClick={onToggleExpand}
         >
           {expanded ? "Ocultar personalización" : "Personalizar"}
@@ -186,7 +186,7 @@ export function SelectedBurgerCard({
             {/* INGREDIENTS */}
             {item.burger.ingredients.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                <p className="mb-2 text-caption font-medium uppercase text-muted-foreground">
                   Ingredientes (click para quitar)
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -217,7 +217,7 @@ export function SelectedBurgerCard({
               {/* MEAT */}
               {meatExtra && (
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                  <p className="mb-2 text-caption font-medium uppercase text-muted-foreground">
                     Medallones
                   </p>
 
@@ -232,7 +232,7 @@ export function SelectedBurgerCard({
                       <Minus className="h-3 w-3" />
                     </Button>
 
-                    <span className="text-sm font-medium">
+                    <span className="text-subheadline font-medium">
                       {item.meatCount}
                     </span>
 
@@ -245,7 +245,7 @@ export function SelectedBurgerCard({
                       <Plus className="h-3 w-3" />
                     </Button>
 
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-caption text-muted-foreground">
                       {getMeatLabel()}
                     </span>
 
@@ -253,7 +253,7 @@ export function SelectedBurgerCard({
                       <button
                         onClick={onToggleVeggie}
                         className={cn(
-                          "ml-1 rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors cursor-pointer",
+                          "ml-1 rounded-full px-2.5 py-0.5 text-caption font-medium border transition-colors cursor-pointer",
                           item.isVeggie
                             ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] border-[var(--status-paid)]/30"
                             : "bg-card text-muted-foreground border-border hover:bg-accent",
@@ -269,7 +269,7 @@ export function SelectedBurgerCard({
               {/* FRIES 🍟 */}
               {friesExtra && (
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                  <p className="mb-2 text-caption font-medium uppercase text-muted-foreground">
                     Papas Fritas
                   </p>
 
@@ -284,7 +284,7 @@ export function SelectedBurgerCard({
                       <Minus className="h-3 w-3" />
                     </Button>
 
-                    <span className="text-sm font-medium">
+                    <span className="text-subheadline font-medium">
                       {item.friesQuantity}
                     </span>
 
@@ -297,7 +297,7 @@ export function SelectedBurgerCard({
                       <Plus className="h-3 w-3" />
                     </Button>
 
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-caption text-muted-foreground">
                       {getFriesLabel()}
                     </span>
                   </div>
@@ -309,7 +309,7 @@ export function SelectedBurgerCard({
             {Object.entries(extrasByCategory).map(
               ([category, categoryExtras]) => (
                 <div key={category}>
-                  <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                  <p className="mb-2 text-caption font-medium uppercase text-muted-foreground">
                     {category === "extra"
                       ? "Extras"
                       : category === "drink"
@@ -357,7 +357,7 @@ export function SelectedBurgerCard({
                 {item.selectedExtras.map((ext) => (
                   <div
                     key={ext.extra.id}
-                    className="flex items-center justify-between text-sm"
+                    className="flex items-center justify-between text-subheadline"
                   >
                     <span>{ext.extra.name}</span>
                     <div className="flex items-center gap-1">
@@ -370,7 +370,7 @@ export function SelectedBurgerCard({
                         <Minus className="h-3 w-3" />
                       </Button>
 
-                      <span className="w-6 text-center text-xs">
+                      <span className="w-6 text-center text-caption">
                         {ext.quantity}
                       </span>
 

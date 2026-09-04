@@ -57,7 +57,7 @@ export function CustomerAddressSelect({
 
   if (!addresses || addresses.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground">
+      <p className="text-caption text-muted-foreground">
         No tiene direcciones guardadas
       </p>
     );
@@ -87,12 +87,12 @@ export function CustomerAddressSelect({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="cursor-pointer text-muted-foreground text-sm">
+              <span className="cursor-pointer text-muted-foreground text-subheadline">
                 🛈
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="max-w-xs text-xs">
+              <p className="max-w-xs text-caption">
                 Nota de la dirección: {selectedAddress?.notes}
               </p>
             </TooltipContent>

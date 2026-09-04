@@ -266,7 +266,7 @@ export function OrdersDashboard() {
                       <button
                         onClick={() => setActiveTab("new")}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors",
                           activeTab === "new"
                             ? "border-primary text-foreground"
                             : "border-transparent text-muted-foreground hover:text-foreground",
@@ -274,14 +274,14 @@ export function OrdersDashboard() {
                       >
                         <span className="h-2 w-2 rounded-full bg-[var(--status-new)]" />
                         Nuevos
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-caption">
                           {sortedOrders.filter((o) => o.status === "new").length}
                         </span>
                       </button>
                       <button
                         onClick={() => setActiveTab("ready")}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors",
                           activeTab === "ready"
                             ? "border-primary text-foreground"
                             : "border-transparent text-muted-foreground hover:text-foreground",
@@ -289,7 +289,7 @@ export function OrdersDashboard() {
                       >
                         <span className="h-2 w-2 rounded-full bg-[var(--status-ready)]" />
                         Listos
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-caption">
                           {sortedOrders.filter((o) => o.status === "ready").length}
                         </span>
                       </button>
@@ -393,7 +393,7 @@ export function OrdersDashboard() {
       {/* FOOTER */}
       <div className="material-regular rounded-2xl p-4 min-h-17.5 shrink-0">
         <div className="flex h-full items-center justify-between gap-4">
-          <div className="text-sm shrink-0">
+          <div className="text-subheadline shrink-0">
             <span className="text-muted-foreground">
               Total pedidos del día:{" "}
             </span>
@@ -402,7 +402,7 @@ export function OrdersDashboard() {
 
           {readyOrders.length > 0 && (
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm text-muted-foreground shrink-0">
+              <span className="text-subheadline text-muted-foreground shrink-0">
                 Pedidos listos:
               </span>
               {readyOrders.length >= 4 && (
@@ -412,7 +412,7 @@ export function OrdersDashboard() {
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Usá la ruedita del mouse para ver más pedidos</p>
+                      <p className="text-caption">Usá la ruedita del mouse para ver más pedidos</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
