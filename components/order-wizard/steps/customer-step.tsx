@@ -119,7 +119,10 @@ export function CustomerStep({
         <div className="flex gap-2">
           <Button
             variant={!isNewCustomer ? "default" : "outline"}
-            className="flex-1 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className={cn(
+              "flex-1",
+              isNewCustomer && "dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
+            )}
             onClick={() => onToggleNewCustomer(false)}
           >
             <User className="mr-2 h-4 w-4" />
@@ -127,7 +130,10 @@ export function CustomerStep({
           </Button>
           <Button
             variant={isNewCustomer ? "default" : "outline"}
-            className="flex-1 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className={cn(
+              "flex-1",
+              !isNewCustomer && "dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
+            )}
             onClick={() => onToggleNewCustomer(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
