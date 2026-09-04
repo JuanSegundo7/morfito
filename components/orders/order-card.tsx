@@ -119,7 +119,7 @@ export function OrderCard({
       <CardContent className="p-4 space-y-3">
         {/* Delivery time banner — shown at the very top when available */}
         {order.delivery_time && (
-          <div className="flex items-center gap-2 rounded-md material-thin border-[var(--accent-tint-32)] px-3 py-1.5">
+          <div className="flex items-center gap-2 rounded-md bg-[var(--accent-tint-08)] border border-[var(--accent-tint-32)] px-3 py-1.5">
             <Timer className="h-4 w-4 text-[var(--accent-brand)] shrink-0" />
             <span className="text-callout font-semibold text-[var(--accent-brand)]">
               {order.delivery_type === "delivery" ? "Entrega:" : "Retira:"}{" "}
