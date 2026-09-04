@@ -112,7 +112,7 @@ export function OrderCard({
       interactive
       className={cn(
         "status-edge cursor-grab p-0",
-        isDragging && "opacity-40 saturate-50 shadow-none",
+        isDragging && "opacity-40 saturate-50 shadow-none transition-none",
       )}
       style={statusEdgeStyle[status]}
     >

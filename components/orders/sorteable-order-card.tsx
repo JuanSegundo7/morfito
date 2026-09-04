@@ -29,7 +29,11 @@ export function SortableOrderCard({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? transition : undefined,
+    // dnd-kit: la transicion es para los hermanos DESPLAZADOS deslizando a
+    // su nuevo lugar. El item bajo el puntero debe trackear 1:1, sin
+    // interpolar -- estaba invertido (el arrastrado animaba 200ms y los
+    // hermanos saltaban instantaneo).
+    transition: isDragging ? undefined : transition,
   };
 
   return (
