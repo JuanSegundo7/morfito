@@ -40,7 +40,7 @@ export function BurgerCard({ burger }: { burger: Burger }) {
     >
       <CardContent className="p-3">
         <p className="font-medium">{burger.name}</p>
-        <p className="text-sm font-semibold text-primary">
+        <p className="text-subheadline font-semibold text-primary">
           {formatCurrency(burger.base_price)}
         </p>
       </CardContent>

@@ -34,7 +34,7 @@ export function ExtraSelector({
 
   return (
     <div>
-      <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+      <p className="mb-2 text-caption font-medium uppercase text-muted-foreground">
         {title}
         {maxQuantity > 1 && (
           <span className="ml-1 normal-case text-muted-foreground">
@@ -79,7 +79,7 @@ export function ExtraSelector({
                     )}
                     <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
                       {qty > 1 ? (
-                        <span className="text-[10px] font-bold">{qty}</span>
+                        <span className="text-caption2 font-bold">{qty}</span>
                       ) : (
                         <Check className="h-3 w-3" />
                       )}
@@ -87,14 +87,14 @@ export function ExtraSelector({
                   </div>
                 )}
 
-                <p className="font-medium text-sm pr-14">{extra.name}</p>
+                <p className="font-medium text-subheadline pr-14">{extra.name}</p>
 
                 {extra.price > 0 ? (
-                  <p className="text-xs text-primary mt-0.5">
+                  <p className="text-caption text-primary mt-0.5">
                     +{formatCurrency(extra.price)}
                   </p>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-caption text-muted-foreground mt-0.5">
                     Incluido
                   </p>
                 )}
@@ -105,7 +105,7 @@ export function ExtraSelector({
       </div>
 
       {required && selectedExtraIds.length === 0 && (
-        <p className="text-xs text-destructive mt-2">
+        <p className="text-caption text-destructive mt-2">
           ⚠️ Debes elegir una opción
         </p>
       )}

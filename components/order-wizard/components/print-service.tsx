@@ -36,10 +36,10 @@ export function PrintServiceIndicator() {
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-medium text-sm">
+                <h4 className="font-medium text-subheadline">
                   Servicio de impresión no disponible
                 </h4>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-caption text-muted-foreground mt-1">
                   Para imprimir tickets, asegúrate de que el servicio esté
                   corriendo en tu PC.
                 </p>
@@ -47,15 +47,15 @@ export function PrintServiceIndicator() {
             </div>
 
             <div className="bg-muted p-3 rounded-md space-y-2">
-              <p className="text-xs font-medium">Pasos para activar:</p>
-              <ol className="text-xs space-y-1 list-decimal list-inside text-muted-foreground">
-                <li>Abre: C:\print-service\</li>
-                <li>Ejecuta: print-service.exe</li>
+              <p className="text-caption font-medium">Pasos para activar:</p>
+              <ol className="text-caption space-y-1 list-decimal list-inside text-muted-foreground">
+                <li>Abre: C:\jebbs-print-service\</li>
+                <li>Ejecuta: jebbs-print-service.exe</li>
                 <li>Verifica que esté corriendo</li>
               </ol>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-caption text-muted-foreground">
               <span>localhost:3001</span>
               <Button
                 variant="ghost"
@@ -84,9 +84,9 @@ export function PrintServiceIndicator() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-green-600" />
-            <h4 className="font-medium text-sm">Servicio activo</h4>
+            <h4 className="font-medium text-subheadline">Servicio activo</h4>
           </div>
-          <div className="text-xs text-muted-foreground space-y-1">
+          <div className="text-caption text-muted-foreground space-y-1">
             <div className="flex justify-between">
               <span>Estado:</span>
               <span className="text-green-600 font-medium">Conectado</span>

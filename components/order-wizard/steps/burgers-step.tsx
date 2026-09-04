@@ -70,7 +70,7 @@ export function BurgersStep({
     <div className="space-y-6">
       {/* Available Burgers */}
       <div>
-        <h3 className="mb-3 text-sm font-medium">Seleccionar hamburguesas</h3>
+        <h3 className="mb-3 text-subheadline font-medium">Seleccionar hamburguesas</h3>
         <div className="grid grid-cols-2 gap-3">
           {availableBurgers?.map((burger) => {
             const qty = burgerCount[burger.id] ?? 0;
@@ -87,12 +87,12 @@ export function BurgersStep({
               >
                 <CardContent className="p-3">
                   {qty > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-caption">
                       {qty}
                     </Badge>
                   )}
                   <p className="font-medium">{burger.name}</p>
-                  <p className="text-sm font-semibold text-primary">
+                  <p className="text-subheadline font-semibold text-primary">
                     {formatCurrency(burger.base_price)}
                   </p>
                 </CardContent>
@@ -107,7 +107,7 @@ export function BurgersStep({
         <>
           <Separator />
           <div>
-            <h3 className="mb-3 text-sm font-medium">
+            <h3 className="mb-3 text-subheadline font-medium">
               Tu pedido ({selectedBurgers.length} items)
             </h3>
             <div className="space-y-3">

@@ -34,8 +34,8 @@ export function SidesStep({
     <div className="space-y-6">
       {/* Available sides */}
       <div>
-        <h3 className="mb-1 text-sm font-medium">Acompañamientos</h3>
-        <p className="text-xs text-muted-foreground mb-3">
+        <h3 className="mb-1 text-subheadline font-medium">Acompañamientos</h3>
+        <p className="text-caption text-muted-foreground mb-3">
           Nuggets, aros de cebolla, papas y más. Podés agregar varios.
         </p>
 
@@ -60,14 +60,14 @@ export function SidesStep({
                 <CardContent className="p-3">
                   {/* ✅ Badge igual que en burgers */}
                   {qty > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-caption">
                       {qty}
                     </Badge>
                   )}
-                  <p className="font-medium text-sm leading-tight">
+                  <p className="font-medium text-subheadline leading-tight">
                     {side.name}
                   </p>
-                  <p className="text-sm font-semibold text-primary mt-1">
+                  <p className="text-subheadline font-semibold text-primary mt-1">
                     {formatCurrency(side.price)}
                   </p>
                 </CardContent>
@@ -80,7 +80,7 @@ export function SidesStep({
       {/* Selected sides — sin header de total (se muestra en la barra global del drawer) */}
       {selectedSides.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium mb-3">Seleccionados</h3>
+          <h3 className="text-subheadline font-medium mb-3">Seleccionados</h3>
 
           <div className="space-y-3">
             {selectedSides.map((item) => {
@@ -95,10 +95,10 @@ export function SidesStep({
                     {/* Header row */}
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
+                        <p className="font-medium text-subheadline truncate">
                           {item.extra.name}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-caption text-muted-foreground">
                           {formatCurrency(item.extra.price)} c/u
                           {extrasPrice > 0 && (
                             <span className="text-primary font-medium">
@@ -121,7 +121,7 @@ export function SidesStep({
                           <Minus className="h-3 w-3" />
                         </Button>
 
-                        <span className="w-5 text-center text-sm font-medium tabular-nums">
+                        <span className="w-5 text-center text-subheadline font-medium tabular-nums">
                           {item.quantity}
                         </span>
 
@@ -155,7 +155,7 @@ export function SidesStep({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-auto p-0 text-xs text-primary"
+                      className="h-auto p-0 text-caption text-primary"
                       onClick={() => onToggleExpanded(item.id)}
                     >
                       {item.expanded ? "Ocultar extras" : "Agregar extras"}
@@ -167,7 +167,7 @@ export function SidesStep({
                         {Object.entries(extrasByCategory).map(
                           ([category, categoryExtras]) => (
                             <div key={category}>
-                              <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                              <p className="mb-2 text-caption font-medium uppercase text-muted-foreground">
                                 {category === "extra"
                                   ? "Extras"
                                   : category === "drink"
@@ -210,9 +210,9 @@ export function SidesStep({
                             {(item.selectedExtras ?? []).map((ext) => (
                               <div
                                 key={ext.extra.id}
-                                className="flex items-center justify-between text-sm"
+                                className="flex items-center justify-between text-subheadline"
                               >
-                                <span className="text-sm">{ext.extra.name}</span>
+                                <span className="text-subheadline">{ext.extra.name}</span>
                                 <div className="flex items-center gap-1">
                                   <Button
                                     variant="ghost"
@@ -228,7 +228,7 @@ export function SidesStep({
                                   >
                                     <Minus className="h-3 w-3" />
                                   </Button>
-                                  <span className="w-6 text-center text-xs">
+                                  <span className="w-6 text-center text-caption">
                                     {ext.quantity}
                                   </span>
                                   <Button
@@ -262,7 +262,7 @@ export function SidesStep({
 
       {availableSides.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <p className="text-sm">No hay acompañamientos disponibles</p>
+          <p className="text-subheadline">No hay acompañamientos disponibles</p>
         </div>
       )}
     </div>
