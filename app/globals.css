@@ -374,9 +374,17 @@
   -webkit-backdrop-filter: blur(var(--blur-scrim)) saturate(120%);
 }
 
-/* .ios-glass CONSERVA su nombre pero cambia de significado: superficie
+/* .ios-glass CONSERVA su nombre pero cambia de SIGNIFICADO: superficie
    elevada, translucida, iluminada, SIN blur. Material barato -- seguro
-   de repetir cientos de veces. */
+   de repetir cientos de veces.
+   NUNCA combinar con .modal-surface en el mismo elemento: se emite
+   despues en esta hoja de estilos y le gana en background-color/border/
+   border-top-color, dejando el modal a la mitad de su opacidad real
+   (bug real, encontrado en 9 dialogos de jebbs -- el backdrop-filter y
+   el box-shadow de modal-surface sobreviven porque ios-glass no los
+   declara, asi que no se nota a simple vista). DialogContent/
+   AlertDialogContent/SheetContent ya traen modal-surface por su
+   cuenta -- no hace falta agregarle nada aca. */
 @utility ios-glass {
   background-color: var(--card);
   border: 1px solid var(--hairline);

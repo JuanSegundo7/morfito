@@ -69,7 +69,7 @@ export function CreateCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md ios-glass rounded-2xl">
+      <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>Nuevo cliente</DialogTitle>
         </DialogHeader>

@@ -272,7 +272,7 @@ export default function CombosPage() {
 
       {/* ---------- CREATE / EDIT ---------- */}
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
-        <DialogContent className="ios-glass rounded-2xl w-full max-w-2xl!">
+        <DialogContent className="rounded-2xl w-full max-w-2xl!">
           <DialogHeader>
             <DialogTitle>
               {editing ? "Editar combo" : "Nuevo combo"}
