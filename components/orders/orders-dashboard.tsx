@@ -32,8 +32,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { OrderCard } from "./order-card";
-import { motion } from "framer-motion";
-import { springs } from "@/lib/motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { useSpring, easeOutIOS } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -83,6 +83,13 @@ export function OrdersDashboard() {
   const [dragOrigin, setDragOrigin] = useState("50% 50%");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
+
+  // Explicito en vez de depender solo del efecto lateral de MotionConfig
+  // reducedMotion="user" (que igual apaga scale/rotate gratis): bajo
+  // reduced motion el lift no debe escalar ni rotar, pero necesita seguir
+  // transmitiendo "esto se esta moviendo" -- un settle de opacidad, no nada.
+  const reducedMotion = useReducedMotion();
+  const liftTransition = useSpring("lift");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -340,7 +347,10 @@ export function OrdersDashboard() {
 
                 <DragOverlay
                   adjustScale={false}
-                  dropAnimation={{ duration: 260, easing: "cubic-bezier(0.16, 1, 0.3, 1)" }}
+                  dropAnimation={{
+                    duration: reducedMotion ? 160 : 260,
+                    easing: `cubic-bezier(${easeOutIOS.join(",")})`,
+                  }}
                 >
                   {activeOrder ? (
                     // will-change: transform va SOLO acá (§11) — es lo único
@@ -354,9 +364,9 @@ export function OrdersDashboard() {
                           statusGlowVar[overStatus ?? activeOrder.status] ?? "var(--status-new)"
                         }`,
                       }}
-                      initial={{ scale: 1, rotate: 0 }}
-                      animate={{ scale: 1.03, rotate: -1 }}
-                      transition={springs.lift}
+                      initial={reducedMotion ? { opacity: 0.6 } : { scale: 1, rotate: 0 }}
+                      animate={reducedMotion ? { opacity: 1 } : { scale: 1.03, rotate: -1 }}
+                      transition={liftTransition}
                     >
                       <OrderCard
                         order={activeOrder}

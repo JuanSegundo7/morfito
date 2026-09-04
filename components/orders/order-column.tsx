@@ -12,7 +12,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
-import { cardPresence, springs } from "@/lib/motion";
+import { cardPresence, useSpring } from "@/lib/motion";
 import { SortableOrderCard } from "./sorteable-order-card";
 
 // Punto de estado, derivado del token, ya no de un string de color crudo
@@ -82,6 +82,12 @@ export function OrderColumn({
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
 
+  // Hooks: llamados una vez acá arriba, no adentro del .map() de abajo --
+  // el numero de motion.div por render varia con filteredOrders.length, asi
+  // que useSpring("move") ahi adentro romperia las Rules of Hooks.
+  const pressTransition = useSpring("press");
+  const moveTransition = useSpring("move");
+
   // scroll-edge-y (globals.css) lee --edge-top: en reposo es 0px (sin
   // efecto), y sube a 14px apenas hay algo scrolleado arriba — así el
   // fade solo aparece cuando de verdad hay contenido oculto arriba.
@@ -125,7 +131,7 @@ export function OrderColumn({
                 initial={{ y: -8, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 8, opacity: 0 }}
-                transition={springs.press}
+                transition={pressTransition}
                 className="inline-block"
               >
                 {filteredOrders.length}
@@ -164,7 +170,7 @@ export function OrderColumn({
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  transition={springs.move}
+                  transition={moveTransition}
                 >
                   <SortableOrderCard
                     order={order}

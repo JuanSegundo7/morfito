@@ -64,22 +64,15 @@ export const materialize: Variants = {
 
 /** Presence de una tarjeta en una lista (order-column): entra empujando,
  *  sale encogiéndose y cerrando el hueco. */
+// Sin `transition` embebida en animate/exit, mismo motivo que materialize
+// arriba: si estuviera acá adentro taparía el `transition={useSpring("move")}`
+// que pasa el caller (order-column.tsx), y el guard de reduced-motion no
+// podria alcanzarla -- era un bug real, ya reproducido una vez con
+// materialize antes de que existiera.
 export const cardPresence: Variants = {
   initial: { opacity: 0, y: -8, scale: 0.98 },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: springs.move,
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.9,
-    height: 0,
-    marginTop: 0,
-    marginBottom: 0,
-    transition: springs.move,
-  },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, scale: 0.9, height: 0, marginTop: 0, marginBottom: 0 },
 };
 
 /**

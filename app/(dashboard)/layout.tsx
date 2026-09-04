@@ -1,6 +1,7 @@
 import type React from "react";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { MotionProvider } from "@/components/providers/motion-provider";
 
 import { Analytics } from "@vercel/analytics/next";
 import { SidebarLayout } from "@/components/layout/sidebar-layout";
@@ -50,9 +51,14 @@ export default async function DashboardLayout({
               billing={entitlements.data.billing}
             />
           ) : (
-            <SidebarProvider defaultOpen={false}>
-              <SidebarLayout activeServiceKeys={activeServiceKeys}>{children}</SidebarLayout>
-            </SidebarProvider>
+            // MotionProvider envuelve solo el arbol que puede tener motion.*
+            // (sidebar, kanban) -- Toaster/Analytics quedan afuera a proposito,
+            // mismo criterio que ya separa a Toaster de SidebarProvider abajo.
+            <MotionProvider>
+              <SidebarProvider defaultOpen={false}>
+                <SidebarLayout activeServiceKeys={activeServiceKeys}>{children}</SidebarLayout>
+              </SidebarProvider>
+            </MotionProvider>
           )}
           {/* Toaster afuera de SidebarProvider a proposito (jebbs-dashboard@
               b40eafa): sonner no esta aplicando su propio position:fixed en

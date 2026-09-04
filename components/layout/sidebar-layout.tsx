@@ -3,7 +3,6 @@
 import type React from "react";
 import { SidebarInset, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { motion } from "framer-motion";
 import { useRef } from "react";
 import { AppSidebar } from "./sidebar";
 
@@ -35,15 +34,12 @@ export function SidebarLayout({
 
   return (
     <>
-      <motion.div
-        onHoverStart={handleHoverStart}
-        onHoverEnd={handleHoverEnd}
-        initial={false}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.1, ease: "easeInOut" }}
-      >
+      {/* initial={false}+animate={{opacity:1}} no tenia ninguna propiedad
+          para interpolar -- era un no-op de framer-motion. Lo unico real
+          acá es la deteccion de hover para expandir/colapsar el sidebar. */}
+      <div onPointerEnter={handleHoverStart} onPointerLeave={handleHoverEnd}>
         <AppSidebar activeServiceKeys={activeServiceKeys} />
-      </motion.div>
+      </div>
       <SidebarInset>
         <main className="flex flex-1 flex-col overflow-y-auto p-4 md:p-2 container mx-auto">
           {children}
