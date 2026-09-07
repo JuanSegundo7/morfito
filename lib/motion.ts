@@ -14,12 +14,13 @@ export const springs = {
   move: { type: "spring", bounce: 0, duration: 0.4 } satisfies Transition,
   /** Superficies grandes asentándose. */
   settle: { type: "spring", bounce: 0, duration: 0.55 } satisfies Transition,
-  /** Drawer/sheet. */
+  /** Drawer/sheet arrastrable con la mano (drag-to-dismiss). Reservado:
+   *  el sheet actual (order-wizard-drawer) se anima con CSS puro, no
+   *  framer-motion — este token espera a que exista un sheet manejado
+   *  por JS que lo necesite. No es código muerto, es un token reservado. */
   sheet: { type: "spring", bounce: 0.2, duration: 0.3 } satisfies Transition,
   /** Levantar bajo el cursor. */
   lift: { type: "spring", bounce: 0.15, duration: 0.26 } satisfies Transition,
-  /** Algo que el usuario lanzó. */
-  toss: { type: "spring", bounce: 0.25, duration: 0.38 } satisfies Transition,
 } as const satisfies Record<string, Transition>;
 
 export type SpringName = keyof typeof springs;

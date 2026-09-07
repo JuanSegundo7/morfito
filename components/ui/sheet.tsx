@@ -58,7 +58,11 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'modal-surface data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-300',
+          // Easing asimetrico (§7): abrir y cerrar no son el mismo gesto
+          // espejado con la misma curva -- estos dos valores son
+          // easeOutIOS/easeInIOS de lib/motion.ts, repetidos acá porque
+          // una clase Tailwind arbitraria no puede importar la constante JS.
+          'modal-surface data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 transition data-[state=open]:ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:ease-[cubic-bezier(0.7,0,0.84,0)] data-[state=closed]:duration-300 data-[state=open]:duration-300',
           side === 'right' &&
             'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 rounded-l-3xl sm:max-w-sm',
           side === 'left' &&
