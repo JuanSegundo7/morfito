@@ -149,7 +149,7 @@ export function OrderCardMobile({
             <button
               onClick={handlePaymentToggle}
               className={cn(
-                "rounded-full p-2 transition-colors cursor-pointer",
+                "rounded-full p-2.5 transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                 order.is_paid
                   ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
                   : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
@@ -160,7 +160,7 @@ export function OrderCardMobile({
                   : "No pagado - Click para marcar como pagado"
               }
             >
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-5 w-5" />
             </button>
             <Badge className={config.className}>{config.label}</Badge>
           </div>
@@ -186,13 +186,15 @@ export function OrderCardMobile({
                   {formatCurrency(order.total_amount)}
                 </span>
                 {canEdit && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={handleStartEdit}
                     title="Editar precio y método de pago"
-                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    <Pencil className="h-3 w-3" />
-                  </button>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
             ) : (
@@ -215,7 +217,7 @@ export function OrderCardMobile({
                         setDraftMethod(m);
                       }}
                       className={cn(
-                        "px-2 py-0.5 rounded text-caption font-medium border transition-colors cursor-pointer",
+                        "px-2 py-0.5 rounded text-caption font-medium border transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                         draftMethod === m
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-card text-muted-foreground border-border hover:bg-accent",

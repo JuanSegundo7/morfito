@@ -163,7 +163,7 @@ export function OrderCard({
             <button
               onClick={handlePaymentToggle}
               className={cn(
-                "rounded-full p-2 transition-colors cursor-pointer",
+                "rounded-full p-2.5 transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                 order.is_paid
                   ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
                   : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
@@ -174,7 +174,7 @@ export function OrderCard({
                   : "No pagado - Click para marcar como pagado"
               }
             >
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -193,13 +193,15 @@ export function OrderCard({
                 {formatCurrency(order.total_amount)}
               </p>
               {canEdit && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={handleStartEdit}
                   title="Editar precio y método de pago"
-                  className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
+                  <Pencil className="h-4 w-4" />
+                </Button>
               )}
             </div>
           ) : (
@@ -222,7 +224,7 @@ export function OrderCard({
                       setDraftMethod(m);
                     }}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-caption font-medium border transition-colors cursor-pointer",
+                      "px-2.5 py-1 rounded-md text-caption font-medium border transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                       draftMethod === m
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card text-muted-foreground border-border hover:bg-accent",

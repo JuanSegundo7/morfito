@@ -289,7 +289,7 @@ export function OrdersDashboard() {
                       <button
                         onClick={() => setActiveTab("new")}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors",
+                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors active:scale-[0.97] active:duration-75",
                           activeTab === "new"
                             ? "border-primary text-foreground"
                             : "border-transparent text-muted-foreground hover:text-foreground",
@@ -304,7 +304,7 @@ export function OrdersDashboard() {
                       <button
                         onClick={() => setActiveTab("ready")}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors",
+                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors active:scale-[0.97] active:duration-75",
                           activeTab === "ready"
                             ? "border-primary text-foreground"
                             : "border-transparent text-muted-foreground hover:text-foreground",
