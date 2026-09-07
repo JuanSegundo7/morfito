@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useExternalIncome,
   useCreateExternalIncome,
@@ -152,13 +153,34 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
                     {formatCurrency(income.amount)}
                   </span>
                   <Button
-                    size="icon"
+                    size="icon-sm"
                     variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => deleteIncome.mutate(income.id)}
+                    className="text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => {
+                      // Undo-toast, no AlertDialog: useCreateExternalIncome
+                      // toma exactamente {date, amount, description} -- todo
+                      // lo que esta fila ya tiene en scope, asi que restaurar
+                      // es un solo call, no una reconstruccion.
+                      const snapshot = {
+                        date: income.date,
+                        amount: income.amount,
+                        description: income.description,
+                      };
+                      deleteIncome.mutate(income.id, {
+                        onSuccess: () => {
+                          toast.success("Ingreso eliminado", {
+                            duration: 8000,
+                            action: {
+                              label: "Deshacer",
+                              onClick: () => createIncome.mutate(snapshot),
+                            },
+                          });
+                        },
+                      });
+                    }}
                     disabled={deleteIncome.isPending}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}

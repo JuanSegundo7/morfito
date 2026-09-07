@@ -73,6 +73,8 @@ export default function OrdersHistoryPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [orderToReactivate, setOrderToReactivate] = useState<Order | null>(null);
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
 
   const pageSize = 10;
@@ -144,11 +146,23 @@ export default function OrdersHistoryPage() {
     setOrderToCancel(null);
   };
 
+  // Rara, y dispara una re-deduccion de stock invisible para quien la
+  // clickea -- a diferencia de cancelar (que ya confirma) esto no
+  // confirmaba nada. El dialogo existe para explicar esa consecuencia,
+  // no solo para frenar el click (§16.2).
   const handleReactivateOrder = (order: Order) => {
+    setOrderToReactivate(order);
+    setReactivateDialogOpen(true);
+  };
+
+  const confirmReactivateOrder = () => {
+    if (!orderToReactivate) return;
     reactivateOrder.mutate({
-      orderId: order.id,
-      nextStatus: order.is_paid ? "completed" : "new",
+      orderId: orderToReactivate.id,
+      nextStatus: orderToReactivate.is_paid ? "completed" : "new",
     });
+    setReactivateDialogOpen(false);
+    setOrderToReactivate(null);
   };
 
   return (
@@ -406,6 +420,26 @@ export default function OrdersHistoryPage() {
               className="bg-red-600 hover:bg-red-700"
             >
               Cancelar pedido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reactivateDialogOpen} onOpenChange={setReactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              ¿Reactivar el pedido #{orderToReactivate?.order_number}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Vuelve al estado "{orderToReactivate?.is_paid ? "Completado" : "Nuevo"}".
+              Se volverá a descontar el stock de los insumos usados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReactivateOrder}>
+              Reactivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

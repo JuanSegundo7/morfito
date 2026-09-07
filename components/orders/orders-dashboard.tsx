@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useOrderForEdit } from "@/lib/hooks/orders/use-order-for-edit";
+import { toast } from "sonner";
 import type { OrderStatus } from "@/lib/types";
 
 // Glow del DragOverlay en el color de estado de la tarjeta que se está
@@ -144,6 +145,7 @@ export function OrdersDashboard() {
 
     const orderId = active.id as string;
     const newStatus = over.id as OrderStatus;
+    const previousStatus = activeOrder?.status;
 
     // Columnas y cards estan registradas como droppables en dnd-kit; si la
     // deteccion de colision alguna vez resuelve `over` a una card en vez de
@@ -155,7 +157,27 @@ export function OrdersDashboard() {
     }
 
     setActiveOrder(null);
-    updateStatus.mutate({ orderId, status: newStatus });
+    // Undo solo en el sentido "hacia atras" (listo->nuevo). nuevo->listo
+    // es el flujo normal de alta frecuencia y se queda silencioso -- listo->
+    // nuevo es rara y casi siempre un arrastre accidental, ahi si vale un
+    // toast con Deshacer.
+    updateStatus.mutate(
+      { orderId, status: newStatus },
+      {
+        onSuccess: () => {
+          if (previousStatus === "ready" && newStatus === "new") {
+            toast("Pedido movido a Nuevos", {
+              duration: 8000,
+              action: {
+                label: "Deshacer",
+                onClick: () =>
+                  updateStatus.mutate({ orderId, status: previousStatus }),
+              },
+            });
+          }
+        },
+      },
+    );
   };
 
   const handleCompleteOrder = (order: Order) => {

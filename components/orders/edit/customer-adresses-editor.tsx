@@ -4,6 +4,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useCreateCustomerAddress,
   useDeleteCustomerAddress,
   useSetDefaultAddress,
@@ -30,6 +40,11 @@ export function CustomerAddressesEditor({
 
   const [isAdding, setIsAdding] = useState(false);
   const [newAddress, setNewAddress] = useState("");
+  // Misma operacion que customer-detail.tsx confirma con un AlertDialog --
+  // que no confirmara aca (dentro del wizard de edicion de pedido) era una
+  // trampa de aprendizaje: el usuario aprende que borrar una direccion
+  // pregunta primero, y en esta pantalla no preguntaba.
+  const [deleteAddressId, setDeleteAddressId] = useState<string | null>(null);
 
   const handleSave = () => {
     if (!newAddress.trim()) return;
@@ -167,7 +182,7 @@ export function CustomerAddressesEditor({
               variant="ghost"
               onClick={(e) => {
                 e.stopPropagation();
-                deleteAddress.mutate(addr.id);
+                setDeleteAddressId(addr.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -175,6 +190,32 @@ export function CustomerAddressesEditor({
           </div>
         );
       })}
+
+      <AlertDialog
+        open={!!deleteAddressId}
+        onOpenChange={(open) => !open && setDeleteAddressId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar dirección?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteAddressId) deleteAddress.mutate(deleteAddressId);
+                setDeleteAddressId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
