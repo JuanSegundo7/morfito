@@ -28,8 +28,13 @@ import {
   type DragStartEvent,
   type Announcements,
   type ScreenReaderInstructions,
+  type CollisionDetection,
+  type KeyboardCoordinateGetter,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
+  KeyboardCode,
+  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -63,6 +68,20 @@ const statusGlowVar: Record<string, string> = {
 const statusColumnLabel: Record<string, string> = {
   new: "Nuevos",
   ready: "Listos",
+};
+
+// Sin esto, closestCorners/rectIntersection puede resolver `over` a OTRA
+// CARD (cada useSortable registra su propio droppable) en vez de a la
+// columna -- el guard de handleDragEnd lo rechaza en silencio, tanto con
+// mouse (soltar encima de una card) como con teclado (ver kanbanCoordinate-
+// Getter mas abajo). Restringir a solo new/ready arregla ambos con un
+// solo cambio. Aplica a los dos sensores: el bug de "soltar encima de una
+// card" con mouse es preexistente, no algo nuevo que introduce el teclado.
+const columnsOnlyCollisionDetection: CollisionDetection = (args) => {
+  const columns = args.droppableContainers.filter(
+    (c) => c.id === "new" || c.id === "ready",
+  );
+  return closestCenter({ ...args, droppableContainers: columns });
 };
 
 // dnd-kit trae sus propios textos default (ingles, semantica generica de
@@ -108,10 +127,6 @@ export function OrdersDashboard() {
   const reducedMotion = useReducedMotion();
   const liftTransition = useSpring("lift");
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
-
   useEffect(() => {
     if (orderToEdit && orderIdToEdit) {
       setWizardOpen(true);
@@ -133,6 +148,40 @@ export function OrdersDashboard() {
     const order = sortedOrders.find((o) => o.id === id);
     return order ? `pedido #${order.order_number}` : "el pedido";
   };
+
+  // Izquierda/derecha = "anda a la otra columna" (da lo mismo cual tecla,
+  // solo hay 2 destinos posibles). Arriba/abajo no tienen significado en
+  // este tablero -- no se reordena nunca dentro de una columna, asi que
+  // devolver undefined (sin mover) es lo correcto, no una limitacion.
+  // sortableKeyboardCoordinates de @dnd-kit/sortable NO sirve aca: considera
+  // TODOS los droppables habilitados (columnas Y cada card individual), asi
+  // que con flecha derecha lo mas probable es que salte a otra CARD en vez
+  // de a la columna -- el mismo problema que columnsOnlyCollisionDetection
+  // arregla arriba, pero el coordinateGetter necesita su propia logica para
+  // apuntar directo al centro de la columna destino.
+  const kanbanCoordinateGetter: KeyboardCoordinateGetter = (event, { context }) => {
+    const isHorizontal = event.code === KeyboardCode.Left || event.code === KeyboardCode.Right;
+    const isVertical = event.code === KeyboardCode.Up || event.code === KeyboardCode.Down;
+    if (!isHorizontal && !isVertical) return undefined;
+    event.preventDefault(); // no dejar que la pagina scrollee mientras hay una card levantada
+    if (!isHorizontal) return undefined;
+
+    const overId = context.over?.id;
+    const currentStatus =
+      overId === "new" || overId === "ready"
+        ? overId
+        : sortedOrders.find((o) => o.id === context.active?.id)?.status;
+    const target = currentStatus === "ready" ? "new" : "ready";
+
+    const rect = context.droppableRects.get(target);
+    if (!rect) return undefined;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: kanbanCoordinateGetter }),
+  );
 
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Se levantó ${orderLabel(String(active.id))}.`,
@@ -326,6 +375,7 @@ export function OrdersDashboard() {
             <div className="flex-1 min-h-0 flex h-full">
               <DndContext
                 sensors={sensors}
+                collisionDetection={columnsOnlyCollisionDetection}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
