@@ -60,6 +60,14 @@ export default async function DashboardLayout({
               </SidebarProvider>
             </MotionProvider>
           )}
+          {/* Taxonomia de toast (regla de la casa):
+              - toast.error   = lo pedido NO paso.
+              - toast.warning = paso, pero un efecto secundario fallo -- puede
+                requerir accion (ej: se guardo el gasto pero no se ajusto el
+                stock).
+              - toast.info    = paso; contexto que no se pidio.
+              No usar error para una falla parcial, ni warning para una falla
+              total -- son distinguibles a proposito. */}
           {/* Toaster afuera de SidebarProvider a proposito (jebbs-dashboard@
               b40eafa): sonner no esta aplicando su propio position:fixed en
               este arbol, y mientras esta seccion quedaba adentro del flex de

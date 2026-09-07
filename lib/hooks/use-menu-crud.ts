@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { Burger, Extra } from "@/lib/types";
+import { toast } from "sonner";
 
 // ==================== BURGERS ====================
 
@@ -44,7 +45,7 @@ export function useCreateBurger() {
     },
     onError: (error: any) => {
       console.error("Error creating burger:", error);
-      alert("Error al crear hamburguesa: " + error.message);
+      toast.error("Error al crear hamburguesa: " + error.message);
     },
   });
 }
@@ -71,7 +72,7 @@ export function useUpdateBurger() {
     },
     onError: (error: any) => {
       console.error("Error updating burger:", error);
-      alert("Error al actualizar hamburguesa: " + error.message);
+      toast.error("Error al actualizar hamburguesa: " + error.message);
     },
   });
 }
@@ -107,7 +108,7 @@ export function useDeleteBurger() {
     },
     onError: (error: any) => {
       console.error("❌ Error in onError:", error);
-      alert(error.message || "Error al eliminar hamburguesa");
+      toast.error(error.message || "Error al eliminar hamburguesa");
     },
   });
 }
@@ -153,7 +154,7 @@ export function useCreateExtra() {
     },
     onError: (error: any) => {
       console.error("Error creating extra:", error);
-      alert("Error al crear extra: " + error.message);
+      toast.error("Error al crear extra: " + error.message);
     },
   });
 }
@@ -180,7 +181,7 @@ export function useUpdateExtra() {
     },
     onError: (error: any) => {
       console.error("Error updating extra:", error);
-      alert("Error al actualizar extra: " + error.message);
+      toast.error("Error al actualizar extra: " + error.message);
     },
   });
 }
@@ -216,7 +217,7 @@ export function useDeleteExtra() {
     },
     onError: (error: any) => {
       console.error("❌ Error in onError:", error);
-      alert(error.message || "Error al eliminar extra");
+      toast.error(error.message || "Error al eliminar extra");
     },
   });
 }
