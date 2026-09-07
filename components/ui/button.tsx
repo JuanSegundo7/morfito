@@ -12,6 +12,12 @@ const buttonVariants = cva(
         // En canvas oscuro el hover ACLARA (--accent-hover), no oscurece:
         // bajarle alpha al naranja sobre casi-negro lo apagaba y se leía
         // como disabled.
+        //
+        // ios-shadow-md acá es MÁS pesado que el ios-shadow-sm de una Card
+        // `raised` en reposo que a menudo lo contiene — es a propósito, no
+        // una inversión a corregir: un elemento interactivo debe pararse
+        // adelante de su contenedor (escalera: well -1 < glass/sm 0 <
+        // hover/md +1 < drag overlay/xl +2, ver globals.css:469-473).
         default: 'bg-primary text-primary-foreground hover:bg-[var(--accent-hover)] ios-shadow-md',
         destructive:
           'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 ios-shadow-md',

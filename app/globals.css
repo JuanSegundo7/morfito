@@ -562,6 +562,12 @@
     -webkit-backdrop-filter: none !important;
     background-color: var(--surface-3);
   }
+  /* .ios-glass no tiene blur que sacar, pero su fondo (--card =
+     --material-thin, alpha 0.42 en oscuro) se queda translucido igual --
+     ~58 sitios lo usan. */
+  .ios-glass {
+    background-color: var(--surface-1);
+  }
 }
 
 @media (prefers-contrast: more) {
