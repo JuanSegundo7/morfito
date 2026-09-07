@@ -14,6 +14,7 @@ import {
   DollarSign,
   Edit,
   ArrowRight,
+  ArrowLeft,
   Copy,
   Timer,
   Pencil,
@@ -36,6 +37,7 @@ interface OrderCardProps {
   isDragging?: boolean;
   visualStatus?: Order["status"];
   onChangeStatus?: (order: Order) => void;
+  onMoveBack?: (order: Order) => void;
 }
 
 export function OrderCard({
@@ -44,6 +46,7 @@ export function OrderCard({
   onEditOrder,
   isDragging,
   onChangeStatus,
+  onMoveBack,
   visualStatus = order.status,
 }: OrderCardProps) {
   const canEdit = order.status === "new" || order.status === "ready";
@@ -298,21 +301,41 @@ export function OrderCard({
                 </Badge>
               )}
             </div>
-            {onChangeStatus &&
-              (order.status === "new" || order.status === "ready") && (
+            <div className="flex items-center gap-1.5">
+              {/* Unico camino de vuelta que el drag permite (listo->nuevo).
+                  Sin esto, alguien sin mouse/sin poder arrastrar no tenia
+                  forma de deshacer ese paso -- el boton de avance solo
+                  sirve para ir hacia adelante. */}
+              {onMoveBack && order.status === "ready" && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="cursor-pointer bg-card"
+                  className="cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChangeStatus(order);
+                    onMoveBack(order);
                   }}
                 >
-                  <ArrowRight className="mr-1.5 h-4 w-4" />
-                  {order.status === "new" ? "Listo" : "Completar"}
+                  <ArrowLeft className="mr-1.5 h-4 w-4" />
+                  Volver a Nuevos
                 </Button>
               )}
+              {onChangeStatus &&
+                (order.status === "new" || order.status === "ready") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer bg-card"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChangeStatus(order);
+                    }}
+                  >
+                    <ArrowRight className="mr-1.5 h-4 w-4" />
+                    {order.status === "new" ? "Listo" : "Completar"}
+                  </Button>
+                )}
+            </div>
           </div>
         )}
       </CardContent>

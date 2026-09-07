@@ -42,6 +42,7 @@ interface OrderColumnProps {
   onViewDetails: (order: Order) => void;
   onEditOrder?: (order: Order) => void; // 🆕
   onChangeStatus?: (order: Order) => void;
+  onMoveBack?: (order: Order) => void;
 }
 
 export function OrderColumn({
@@ -51,6 +52,7 @@ export function OrderColumn({
   onViewDetails,
   onEditOrder, // 🆕
   onChangeStatus,
+  onMoveBack,
 }: OrderColumnProps) {
   const filteredOrders = orders.filter((order) => order.status === status);
   const columnRevenue = filteredOrders.reduce((sum, o) => sum + (o.total_amount ?? 0), 0);
@@ -177,6 +179,7 @@ export function OrderColumn({
                     onViewDetails={onViewDetails}
                     onEditOrder={onEditOrder} // 🆕
                     onChangeStatus={onChangeStatus} // 👈
+                    onMoveBack={onMoveBack}
                   />
                 </motion.div>
               ))}
@@ -187,7 +190,7 @@ export function OrderColumn({
           {status === "new" && filteredOrders.length > 0 && (
             <div className="pointer-events-none mt-4 flex justify-center">
               <div className=" px-3 py-1 text-caption text-muted-foreground">
-                - Arrastrá las tarjetas para cambiar su estado -
+                - Arrastrá las tarjetas, o usá los botones de cada pedido, para cambiar su estado -
               </div>
             </div>
           )}

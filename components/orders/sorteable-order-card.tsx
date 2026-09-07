@@ -10,11 +10,13 @@ export function SortableOrderCard({
   onViewDetails,
   onEditOrder, // 🆕
   onChangeStatus,
+  onMoveBack,
 }: {
   order: Order;
   onViewDetails: (order: Order) => void;
   onEditOrder?: (order: Order) => void; // 🆕
   onChangeStatus?: (order: Order) => void;
+  onMoveBack?: (order: Order) => void;
 }) {
   const {
     attributes,
@@ -54,7 +56,11 @@ export function SortableOrderCard({
         style={style}
         {...attributes}
         {...listeners}
-        className="hidden lg:block"
+        // useSortable ya da role="button" tabindex="0" aria-roledescription=
+        // "sortable" -- sin este ring, alguien tabulando el tablero es
+        // invisible para si mismo. rounded-2xl para que el ring calce con
+        // el radio real de la Card de adentro.
+        className="hidden lg:block rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         <OrderCard
           order={order}
@@ -63,6 +69,7 @@ export function SortableOrderCard({
           visualStatus={order.status}
           onEditOrder={onEditOrder} // 🆕
           onChangeStatus={onChangeStatus}
+          onMoveBack={onMoveBack}
         />
       </div>
     </>

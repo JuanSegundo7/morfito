@@ -26,6 +26,8 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
+  type Announcements,
+  type ScreenReaderInstructions,
   DragOverlay,
   PointerSensor,
   useSensor,
@@ -56,6 +58,20 @@ const statusGlowVar: Record<string, string> = {
   ready: "var(--status-ready)",
   completed: "var(--status-completed)",
   canceled: "var(--status-canceled)",
+};
+
+const statusColumnLabel: Record<string, string> = {
+  new: "Nuevos",
+  ready: "Listos",
+};
+
+// dnd-kit trae sus propios textos default (ingles, semantica generica de
+// "sortable") -- ni el idioma ni el vocabulario calzan con este tablero.
+const screenReaderInstructions: ScreenReaderInstructions = {
+  draggable:
+    "Para levantar un pedido, presioná la barra espaciadora. " +
+    "Mientras lo arrastrás, usá las flechas para moverlo entre columnas. " +
+    "Presioná espacio de nuevo para soltarlo, o escape para cancelar.",
 };
 
 export function OrdersDashboard() {
@@ -109,6 +125,28 @@ export function OrdersDashboard() {
     if (!b.delivery_time) return -1;
     return a.delivery_time.localeCompare(b.delivery_time);
   });
+
+  // Referencia al numero de pedido, no al UUID crudo que dnd-kit da como
+  // active.id -- "se movio el pedido a3f9e2d1..." no le sirve a nadie
+  // escuchando con lector de pantalla.
+  const orderLabel = (id: string) => {
+    const order = sortedOrders.find((o) => o.id === id);
+    return order ? `pedido #${order.order_number}` : "el pedido";
+  };
+
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Se levantó ${orderLabel(String(active.id))}.`,
+    onDragOver: ({ active, over }) =>
+      over
+        ? `${orderLabel(String(active.id))} está sobre la columna ${statusColumnLabel[String(over.id)] ?? over.id}.`
+        : `${orderLabel(String(active.id))} ya no está sobre una columna.`,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `${orderLabel(String(active.id))} se movió a la columna ${statusColumnLabel[String(over.id)] ?? over.id}.`
+        : `${orderLabel(String(active.id))} se soltó sin moverse de columna.`,
+    onDragCancel: ({ active }) =>
+      `Se canceló el arrastre. ${orderLabel(String(active.id))} volvió a su lugar.`,
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const order = sortedOrders.find((o) => o.id === event.active.id);
@@ -227,6 +265,16 @@ export function OrdersDashboard() {
     }
   };
 
+  // El unico movimiento hacia atras que el drag permite (listo->nuevo) no
+  // tenia contraparte de boton -- era el hueco real del acceso por teclado,
+  // no la ausencia de un KeyboardSensor. Con esto el tablero queda 100%
+  // operable sin arrastrar, y de paso le sirve a cualquiera con mouse.
+  const handleMoveBack = (order: Order) => {
+    if (order.status === "ready") {
+      updateStatus.mutate({ orderId: order.id, status: "new" });
+    }
+  };
+
   const readyOrders = sortedOrders.filter((o) => o.status === "ready");
   const readyOrdersScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -281,6 +329,7 @@ export function OrdersDashboard() {
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
+                accessibility={{ announcements, screenReaderInstructions }}
               >
                 <div className="flex-1 min-h-0">
                   {/* Mobile: tabs */}
@@ -326,6 +375,7 @@ export function OrdersDashboard() {
                           onViewDetails={(o) => { setSelectedOrder(o); setDetailsOpen(true); }}
                           onEditOrder={handleEditOrder}
                           onChangeStatus={handleChangeStatus}
+                          onMoveBack={handleMoveBack}
                         />
                       ) : (
                         <OrderColumn
@@ -335,6 +385,7 @@ export function OrdersDashboard() {
                           onViewDetails={(o) => { setSelectedOrder(o); setDetailsOpen(true); }}
                           onEditOrder={handleEditOrder}
                           onChangeStatus={handleChangeStatus}
+                          onMoveBack={handleMoveBack}
                         />
                       )}
                     </div>
@@ -352,6 +403,7 @@ export function OrdersDashboard() {
                       }}
                       onEditOrder={handleEditOrder}
                       onChangeStatus={handleChangeStatus}
+                      onMoveBack={handleMoveBack}
                     />
                     <OrderColumn
                       title="Listos"
@@ -363,6 +415,7 @@ export function OrdersDashboard() {
                       }}
                       onEditOrder={handleEditOrder}
                       onChangeStatus={handleChangeStatus}
+                      onMoveBack={handleMoveBack}
                     />
                   </div>
                 </div>
