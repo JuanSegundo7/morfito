@@ -3,7 +3,7 @@ import type { VerticalDefinition } from "./types";
 /**
  * The burger vertical, encoded as data.
  *
- * This is documentation-as-code of what Dishflow already does today — every
+ * This is documentation-as-code of what Morfito already does today — every
  * label below was read from the actual pages/components, not guessed:
  *   - variant group labels: app/(dashboard)/extras/page.tsx `categoryLabels`
  *   - page titles/subtitles: the <Header title=... subtitle=... /> call in

@@ -30,17 +30,12 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { SERVICE_NAV_HREFS } from "@/lib/service-nav-map";
 import Image from "next/image";
-import { Pacifico, Baloo_2 } from "next/font/google";
+import { Baloo_2 } from "next/font/google";
 import { useVertical } from "@/components/providers/vertical-provider";
 
 const baloo = Baloo_2({
   subsets: ["latin"],
   weight: ["600", "700"],
-});
-
-const pacifico = Pacifico({
-  subsets: ["latin"],
-  weight: "400",
 });
 
 const navigation = [
@@ -129,16 +124,13 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
           <div className="grid grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-in-out group-data-[collapsible=icon]:grid-cols-[0fr]">
             <div
               className={cn(
-                "flex flex-col leading-tight overflow-hidden min-w-0",
+                "flex items-center overflow-hidden min-w-0",
                 "transition-opacity duration-300 ease-in-out opacity-100",
                 "group-data-[collapsible=icon]:opacity-0",
               )}
             >
               <span className={cn(baloo.className, "text-headline font-bold tracking-wide whitespace-nowrap")}>
-                Gastro
-              </span>
-              <span className={cn(pacifico.className, "text-subheadline text-(--color-brand) -mt-1 whitespace-nowrap")}>
-                Dashboard
+                Morfito
               </span>
             </div>
           </div>

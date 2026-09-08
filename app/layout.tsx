@@ -5,7 +5,7 @@ import { geistMono, pacifico } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dishflow",
+  title: "Morfito",
   description: "Sistema de gestión de operaciones para restaurantes",
   generator: "v0.app",
   icons: {

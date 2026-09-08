@@ -2,7 +2,7 @@
  * Vertical configuration layer.
  *
  * The `products` + `variant_groups` + `variant_options` schema (see
- * dishflow-generic-products-refactor) lets one codebase serve
+ * morfito-generic-products-refactor) lets one codebase serve
  * burger/sushi/pizza/etc verticals, with vertical-specific behavior
  * isolated behind the `VerticalDefinition` shape declared here.
  *
@@ -140,7 +140,7 @@ export interface RendimientoConfig {
 
 /**
  * Full configuration for one vertical. One `VerticalDefinition` = one
- * business type Dishflow can be deployed as.
+ * business type Morfito can be deployed as.
  */
 export interface VerticalDefinition {
   /** Must match a control-panel `projects.category` slug — see VerticalCategorySlug. */
