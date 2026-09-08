@@ -5,11 +5,42 @@
 
 /* iOS-style Light theme */
 :root {
+  /* Escalera opaca (§12, portado de jebbs-dashboard) -- uso directo en
+     regiones sin vidrio, y fallback cuando backdrop-filter no esta
+     disponible (ver @media prefers-reduced-transparency mas abajo, que
+     hasta ahora apuntaba a estas clases sin que existieran: quedaban
+     como fallback muerto). Neutros, no dependen del acento de producto. */
+  --surface-0: #f2f2f7;
+  --surface-1: #ffffff;
+  --surface-2: #f5f5f7;
+  --surface-3: #e9e9ee;
+
+  /* Materiales translucidos. */
+  --material-thin: rgba(255, 255, 255, 0.72);
+  --material-regular: rgba(255, 255, 255, 0.78);
+  --material-thick: rgba(255, 255, 255, 0.86);
+  --well: rgba(0, 0, 0, 0.04);
+
+  --blur-thin: 14px;
+  --blur-regular: 28px;
+  --blur-thick: 44px;
+  --blur-scrim: 6px;
+  --material-saturate: 165%;
+
+  /* Hairlines y cantos especulares -- el 1px de luz que hace que una
+     superficie se lea como fisica. */
+  --hairline: rgba(60, 60, 67, 0.13);
+  --hairline-strong: rgba(60, 60, 67, 0.22);
+  --specular: rgba(255, 255, 255, 0.6);
+  --specular-strong: rgba(255, 255, 255, 0.85);
+
   --background: #f2f2f7;
   --foreground: #1c1c1e;
-  --card: rgba(255, 255, 255, 0.8);
+  /* card/popover/sidebar toman valores de MATERIAL, no un rgba plano
+     suelto, para que coincidan con lo que .ios-glass/material-* pintan. */
+  --card: var(--material-thin);
   --card-foreground: #1c1c1e;
-  --popover: rgba(255, 255, 255, 0.95);
+  --popover: var(--material-thick);
   --popover-foreground: #1c1c1e;
   --primary: #007aff;
   --primary-foreground: #ffffff;
@@ -21,7 +52,7 @@
   --accent-foreground: #ffffff;
   --destructive: #ff3b30;
   --destructive-foreground: #ffffff;
-  --border: rgba(120, 120, 128, 0.2);
+  --border: var(--hairline);
   --input: rgba(120, 120, 128, 0.12);
   --ring: #007aff;
   --chart-1: #007aff;
@@ -30,13 +61,13 @@
   --chart-4: #af52de;
   --chart-5: #ff2d92;
   --radius: 12px;
-  --sidebar: rgba(255, 255, 255, 0.7);
+  --sidebar: var(--material-thick);
   --sidebar-foreground: #1c1c1e;
   --sidebar-primary: #007aff;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(120, 120, 128, 0.16);
   --sidebar-accent-foreground: #1c1c1e;
-  --sidebar-border: rgba(120, 120, 128, 0.2);
+  --sidebar-border: var(--hairline);
   --sidebar-ring: #007aff;
   /* iOS Status colors */
   --status-new: #007aff;
@@ -54,11 +85,34 @@
 
 /* Dark theme — zinc palette */
 .dark {
+  /* Misma escalera que :root, valores oscuros (portado de jebbs-dashboard,
+     ver comentario en :root). */
+  --surface-0: #09090b;
+  --surface-1: #101215;
+  --surface-2: #18181b;
+  --surface-3: #202024;
+
+  --material-thin: rgba(24, 24, 27, 0.55);
+  --material-regular: rgba(24, 24, 27, 0.72);
+  --material-thick: rgba(15, 15, 17, 0.85);
+  --well: rgba(0, 0, 0, 0.30);
+
+  --blur-thin: 14px;
+  --blur-regular: 28px;
+  --blur-thick: 44px;
+  --blur-scrim: 6px;
+  --material-saturate: 165%;
+
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  --specular: rgba(255, 255, 255, 0.10);
+  --specular-strong: rgba(255, 255, 255, 0.18);
+
   --background: #09090b;
   --foreground: #fafafa;
-  --card: #18181b;
+  --card: var(--material-thin);
   --card-foreground: #fafafa;
-  --popover: #18181b;
+  --popover: var(--material-thick);
   --popover-foreground: #fafafa;
   --primary: #0a84ff;
   --primary-foreground: #ffffff;
@@ -70,7 +124,7 @@
   --accent-foreground: #fafafa;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #27272a;
+  --border: var(--hairline);
   --input: #27272a;
   --ring: #0a84ff;
   --chart-1: #3b82f6;
@@ -78,13 +132,13 @@
   --chart-3: #f59e0b;
   --chart-4: #a855f7;
   --chart-5: #ec4899;
-  --sidebar: #18181b;
+  --sidebar: var(--material-thick);
   --sidebar-foreground: #fafafa;
   --sidebar-primary: #0a84ff;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #27272a;
   --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
+  --sidebar-border: var(--hairline);
   --sidebar-ring: #0a84ff;
   --status-new: #3b82f6;
   --status-paid: #22c55e;
@@ -117,6 +171,12 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -244,38 +304,110 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  .ios-blur {
-    background: var(--card);
-  }
-
-  /* iOS-style shadows */
-  .ios-shadow-sm {
-    box-shadow: var(--shadow-sm);
-  }
-
-  .ios-shadow-md {
-    box-shadow: var(--shadow-md);
-  }
-
-  .ios-shadow-lg {
-    box-shadow: var(--shadow-lg);
-  }
-
-  .ios-shadow-xl {
-    box-shadow: var(--shadow-xl);
-  }
-
-  .ios-glass {
-    background: var(--card);
-    border: 1px solid var(--border);
-  }
-
   /* Custom scrollbars */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
   * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+}
+
+/* Materiales reales (§12, portado de jebbs-dashboard) -- @utility, no
+   @layer base, para vivir en la capa `utilities` y no perder contra
+   `bg-card`. Reemplaza las clases ios-shadow-N, ios-glass e ios-blur
+   anteriores (dot-classes lisos sin blur real) -- mismos nombres para no
+   romper los sitios que ya los usan, pero ahora con blur/saturate/hairline
+   de verdad. */
+@utility material-regular {
+  background-color: var(--material-regular);
+  backdrop-filter: blur(var(--blur-regular)) saturate(var(--material-saturate));
+  -webkit-backdrop-filter: blur(var(--blur-regular)) saturate(var(--material-saturate));
+  border: 1px solid var(--hairline);
+  border-top-color: var(--specular);
+}
+
+@utility material-thick {
+  background-color: var(--material-thick);
+  backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+  -webkit-backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+  border: 1px solid var(--hairline);
+  border-top-color: var(--specular-strong);
+}
+
+@utility material-thin {
+  background-color: var(--material-thin);
+  backdrop-filter: blur(var(--blur-thin)) saturate(var(--material-saturate));
+  -webkit-backdrop-filter: blur(var(--blur-thin)) saturate(var(--material-saturate));
+  border: 1px solid var(--hairline);
+  border-top-color: var(--specular);
+}
+
+/* Pozo hundido. El contenido va ADENTRO, asi que debe ser MAS OSCURO
+   que lo que contiene. Sin blur: envuelve un scroller largo. */
+@utility material-well {
+  background-color: var(--well);
+  border: 1px solid var(--hairline);
+}
+
+/* Superficie de modal. Una sola definicion compartida por dialog,
+   alert-dialog y sheet para que no puedan volver a divergir. */
+@utility modal-surface {
+  background-color: var(--material-thick);
+  backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+  -webkit-backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+  border: 1px solid var(--hairline);
+  border-top-color: var(--specular-strong);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Atenuar para enfocar. Reemplaza a la mal nombrada .ios-blur. */
+@utility scrim {
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(var(--blur-scrim)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--blur-scrim)) saturate(120%);
+}
+
+/* Alias de compatibilidad, mismo cuerpo que scrim. */
+@utility ios-blur {
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(var(--blur-scrim)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--blur-scrim)) saturate(120%);
+}
+
+/* .ios-glass CONSERVA su nombre pero cambia de significado: superficie
+   elevada, translucida, iluminada, SIN blur. Material barato -- seguro
+   de repetir cientos de veces. */
+@utility ios-glass {
+  background-color: var(--card);
+  border: 1px solid var(--hairline);
+  border-top-color: var(--specular);
+}
+
+/* Escalera de profundidad (components/ui/card.tsx `depth` prop). */
+@utility ios-shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+@utility ios-shadow-md {
+  box-shadow: var(--shadow-md);
+}
+@utility ios-shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+@utility ios-shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
+
+/* El hook que sidebar.tsx referencia (variant="floating"). Cae sobre
+   sidebar-container (el wrapper p-2), asi que alcanza al panel interno. */
+@utility ios-sidebar {
+  & [data-slot="sidebar-inner"] {
+    backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+    -webkit-backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+    border: 1px solid var(--hairline) !important;
+    border-top-color: var(--specular-strong) !important;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+  }
 }
 
 /* Vibrancy (§12): sobre material translúcido el texto quiere más contraste,
