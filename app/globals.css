@@ -146,15 +146,98 @@
   --color-brand: var(--brand);
 }
 
+/* Escala tipográfica (§15, apple-design) — portada de jebbs-dashboard
+   (a0448f9). Rampa iOS completa (HIG, Large text size): sizes y leading
+   son los de iOS, tracking en curva monótona (negativo al crecer, positivo
+   al achicar). Pesos normalizados a 400/500/600/700 -- con -apple-system
+   el navegador expone caras discretas, y font-synthesis-weight:none (en
+   `body`, abajo) hace que cualquier peso fraccionario snapee sin avisar.
+   Aditiva: text-sm/text-xl/etc. de Tailwind siguen funcionando igual. */
+@theme {
+  /* Large Title 34 */
+  --text-display: 2.125rem;
+  --text-display--line-height: 1.206;
+  --text-display--letter-spacing: -0.022em;
+  --text-display--font-weight: 700;
+
+  /* Title 1 / 28 */
+  --text-title1: 1.75rem;
+  --text-title1--line-height: 1.214;
+  --text-title1--letter-spacing: -0.020em;
+  --text-title1--font-weight: 600;
+
+  /* Title 2 / 22 */
+  --text-title2: 1.375rem;
+  --text-title2--line-height: 1.273;
+  --text-title2--letter-spacing: -0.018em;
+  --text-title2--font-weight: 600;
+
+  /* Title 3 / 20 */
+  --text-title3: 1.25rem;
+  --text-title3--line-height: 1.25;
+  --text-title3--letter-spacing: -0.016em;
+  --text-title3--font-weight: 600;
+
+  /* Headline 17 semibold */
+  --text-headline: 1.0625rem;
+  --text-headline--line-height: 1.294;
+  --text-headline--letter-spacing: -0.014em;
+  --text-headline--font-weight: 600;
+
+  /* Body 17 — sin weight: los font-medium/semibold/bold existentes siguen componiendo */
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.3;
+  --text-body--letter-spacing: -0.011em;
+
+  /* Callout 16 */
+  --text-callout: 1rem;
+  --text-callout--line-height: 1.3125;
+  --text-callout--letter-spacing: -0.009em;
+
+  /* Subheadline 15 — destino de los text-sm (caja 20px, igual a hoy) */
+  --text-subheadline: 0.9375rem;
+  --text-subheadline--line-height: 1.3333;
+  --text-subheadline--letter-spacing: -0.006em;
+
+  /* Footnote 13 */
+  --text-footnote: 0.8125rem;
+  --text-footnote--line-height: 1.3846;
+  --text-footnote--letter-spacing: -0.002em;
+
+  /* Caption 1 / 12 — destino de los text-xs (caja 16px, igual a hoy) */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.3333;
+  --text-caption--letter-spacing: 0.002em;
+
+  /* Caption 2 / 11 — reemplaza text-[10px]/text-[11px] */
+  --text-caption2: 0.6875rem;
+  --text-caption2--line-height: 1.1818;
+  --text-caption2--letter-spacing: 0.006em;
+
+  /* Overline 11 uppercase — app-specific, no es un text style de iOS */
+  --text-overline: 0.6875rem;
+  --text-overline--line-height: 1.2;
+  --text-overline--letter-spacing: 0.075em;
+  --text-overline--font-weight: 600;
+
+  /* Amount 24 — app-specific: la cifra de dinero */
+  --text-amount: 1.5rem;
+  --text-amount--line-height: 1.1667;
+  --text-amount--letter-spacing: -0.019em;
+  --text-amount--font-weight: 700;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground text-body;
     font-family:
       -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
       sans-serif;
+    font-optical-sizing: auto;
+    font-synthesis-weight: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
