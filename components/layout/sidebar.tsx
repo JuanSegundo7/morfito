@@ -94,29 +94,53 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
     <Sidebar collapsible="icon" variant="floating" className="ios-sidebar">
       <SidebarHeader className="pb-2">
         <div className="flex items-center gap-3 px-1 py-2 transition-all duration-300 ease-in-out overflow-hidden group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0">
+          {/*
+            Sin mx-auto en el icono: margin:auto no interpola (es un salto
+            discreto, no una animacion -- CSS Transitions no puede
+            interpolar hacia/desde la palabra clave "auto"), asi que
+            cualquier intento de centrarlo con margen terminaba saltando en
+            un punto de la transicion donde la fila todavia tenia ancho de
+            sobra, y se veia el texto amontonado contra el icono a mitad de
+            camino (portado de jebbs-dashboard@db61ce4). El icono se queda
+            quieto a la izquierda todo el tiempo -- una imperfeccion
+            cosmetica minima (no queda perfecto al centro en modo icono) a
+            cambio de cero saltos.
+          */}
           <Image
             src="/placeholder-logo.png"
             alt="Logo"
             width={36}
             height={36}
-            className="rounded-lg shrink-0 size-9 object-cover group-data-[collapsible=icon]:mx-auto"
+            className="rounded-lg shrink-0 size-9 object-cover"
           />
-          <div
-            className={cn(
-              // leading-tight deliberado: stack de 2 lineas (Jebbs / Burgers),
-              // el leading normal de headline/subheadline las separa de mas.
-              "flex flex-col leading-tight overflow-hidden",
-              "transition-all duration-300 ease-in-out",
-              "max-w-xs opacity-100",
-              "group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0",
-            )}
-          >
-            <span className={cn(baloo.className, "text-headline font-bold tracking-wide whitespace-nowrap")}>
-              Gastro
-            </span>
-            <span className={cn(pacifico.className, "text-subheadline text-(--color-brand) -mt-1 whitespace-nowrap")}>
-              Dashboard
-            </span>
+          {/*
+            grid-template-columns 1fr -> 0fr, no max-width -> max-w-0: con
+            max-width el ancho real queda pisado en el ancho natural del
+            contenido (~80px) mientras el techo (max-w-xs = 320px) todavia
+            no lo alcanza, asi que la animacion queda "muerta" la mayor
+            parte del tiempo y recien colapsa de golpe al final. El truco
+            de fr-units se achica en proporcion al contenido real desde el
+            primer frame, sin zona muerta. La opacidad usa la MISMA
+            duracion/easing que el ancho (300ms, sin delay) a proposito: si
+            el fade terminara antes o despues que el angostamiento, hay una
+            ventana donde el texto se ve recortado pero todavia bien
+            visible, amontonado contra el icono.
+          */}
+          <div className="grid grid-cols-[1fr] transition-[grid-template-columns] duration-300 ease-in-out group-data-[collapsible=icon]:grid-cols-[0fr]">
+            <div
+              className={cn(
+                "flex flex-col leading-tight overflow-hidden min-w-0",
+                "transition-opacity duration-300 ease-in-out opacity-100",
+                "group-data-[collapsible=icon]:opacity-0",
+              )}
+            >
+              <span className={cn(baloo.className, "text-headline font-bold tracking-wide whitespace-nowrap")}>
+                Gastro
+              </span>
+              <span className={cn(pacifico.className, "text-subheadline text-(--color-brand) -mt-1 whitespace-nowrap")}>
+                Dashboard
+              </span>
+            </div>
           </div>
         </div>
       </SidebarHeader>

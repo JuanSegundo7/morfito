@@ -2,11 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const PRINT_SERVICE_URL = "http://localhost:3001";
+// Exportado: use-printers.ts (hook hermano, para el popover de impresoras)
+// lo reusa para no desincronizar un segundo "http://localhost:3001" a mano.
+export const PRINT_SERVICE_URL = "http://localhost:3001";
 
 // Hook para verificar disponibilidad del servicio
 export function usePrintServiceStatus() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["print-service-status"],
     queryFn: async () => {
       try {
@@ -25,6 +27,8 @@ export function usePrintServiceStatus() {
         return {
           isAvailable: true,
           version: data.version,
+          printerConfigured: Boolean(data.printerConfigured),
+          selectedPrinter: data.selectedPrinter as string | null,
         };
       } catch (error) {
         return { isAvailable: false };
@@ -37,7 +41,10 @@ export function usePrintServiceStatus() {
   return {
     isAvailable: data?.isAvailable ?? false,
     version: data?.version,
+    printerConfigured: data?.printerConfigured ?? false,
+    selectedPrinter: data?.selectedPrinter ?? null,
     isChecking: isLoading,
+    refetch,
   };
 }
 
