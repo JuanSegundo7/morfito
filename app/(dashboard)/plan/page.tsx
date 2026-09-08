@@ -32,7 +32,7 @@ export default async function PlanPage() {
   const entitlements = await getEntitlements();
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header title="Mi Plan" subtitle="Estado de tu suscripción y servicios habilitados" />
 
       <div className="flex-1 overflow-auto py-6 space-y-6">

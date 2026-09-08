@@ -73,7 +73,7 @@ export default function InsumosPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header title="Insumos" subtitle="Gestioná el stock y costo de tus insumos" />
 
       <div className="p-4 flex justify-end bg-background">
