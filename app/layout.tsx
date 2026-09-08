@@ -1,7 +1,7 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { geistSans, geistMono, pacifico } from "@/lib/fonts";
+import { geistMono, pacifico } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`dark ${geistSans.variable} ${geistMono.variable} ${pacifico.variable}`}
+      className={`dark ${geistMono.variable} ${pacifico.variable}`}
       suppressHydrationWarning
     >
       <head>
