@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { Order } from "@/lib/types";
+import { computeNetRevenue } from "@/lib/services/finance-summary";
 
 const TZ = "America/Argentina/Buenos_Aires";
 
@@ -155,10 +156,12 @@ export function useOrdersAnalytics(
         { data: prevCanceled, error: e4 },
         { data: externalIncome, error: e5 },
         { data: prevExternalIncome, error: e6 },
+        { data: expenses, error: e7 },
+        { data: prevExpenses, error: e8 },
       ] = await Promise.all([
         supabase
           .from("orders")
-          .select("total_amount, updated_at")
+          .select("total_amount, commission_amount, updated_at")
           .eq("status", "completed")
           .gte("updated_at", start.toISOString())
           .lte("updated_at", end.toISOString()),
@@ -190,6 +193,18 @@ export function useOrdersAnalytics(
           .select("date, amount")
           .gte("date", prevStartDateStr)
           .lte("date", prevEndDateStr),
+        // finanzas-gastos-recetas PR6 — same DATE-column treatment as
+        // external_income above (expenses.date is a DATE, not a timestamp).
+        supabase
+          .from("expenses")
+          .select("date, amount")
+          .gte("date", startDateStr)
+          .lte("date", endDateStr),
+        supabase
+          .from("expenses")
+          .select("date, amount")
+          .gte("date", prevStartDateStr)
+          .lte("date", prevEndDateStr),
       ]);
 
       if (e1) throw e1;
@@ -198,6 +213,8 @@ export function useOrdersAnalytics(
       if (e4) throw e4;
       if (e5) throw e5;
       if (e6) throw e6;
+      if (e7) throw e7;
+      if (e8) throw e8;
 
       const currentCompleted = current?.length || 0;
       const prevCompleted = prev?.length || 0;
@@ -214,6 +231,23 @@ export function useOrdersAnalytics(
       const prevExternalRevenue =
         prevExternalIncome?.reduce((acc, e) => acc + Number(e.amount), 0) || 0;
       const prevRevenue = prevOrdersRevenue + prevExternalRevenue;
+
+      // finanzas-gastos-recetas PR6 — see lib/services/finance-summary.ts's
+      // header for why commissionTotal is informational-only and never an
+      // operand of netRevenue (orders.total_amount is already net of
+      // commission, per use-create-order.ts).
+      const expensesTotal =
+        expenses?.reduce((acc, e) => acc + Number(e.amount), 0) || 0;
+      const prevExpensesTotal =
+        prevExpenses?.reduce((acc, e) => acc + Number(e.amount), 0) || 0;
+      const commissionTotal =
+        current?.reduce((acc, o) => acc + Number(o.commission_amount), 0) || 0;
+
+      const netRevenueResult = computeNetRevenue({
+        totalRevenue: currentRevenue,
+        expensesTotal,
+        commissionTotalInformational: commissionTotal,
+      });
 
       const msPerDay = 1000 * 60 * 60 * 24;
       const daysInPeriod =
@@ -232,28 +266,37 @@ export function useOrdersAnalytics(
         p > 0 ? ((curr - p) / p) * 100 : 0;
 
       // Group completed by AR local date
-      const dailyMap: Record<string, { orders: number; revenue: number; canceled: number }> = {};
+      const dailyMap: Record<string, { orders: number; revenue: number; canceled: number; expenses: number }> = {};
       for (const o of current || []) {
         const key = toArDateStr(new Date(o.updated_at));
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].orders++;
         dailyMap[key].revenue += Number(o.total_amount);
       }
       // Group canceled by AR local date
       for (const o of canceled || []) {
         const key = toArDateStr(new Date(o.updated_at));
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].canceled++;
       }
       // Add external income to daily revenue (date is already YYYY-MM-DD in AR time)
       for (const e of externalIncome || []) {
         const key = e.date;
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].revenue += Number(e.amount);
+      }
+      // Group expenses by their own DATE column (date is already YYYY-MM-DD
+      // in AR time, same shape as external_income above) — feeds Resumen's
+      // daily income-vs-expenses chart. Never netted against revenue here;
+      // that's computeNetRevenue's job on the aggregate totals only.
+      for (const e of expenses || []) {
+        const key = e.date;
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
+        dailyMap[key].expenses += Number(e.amount);
       }
 
       // Fill all days in range
-      const dailyData: { date: string; day: number; orders: number; revenue: number; canceled: number }[] = [];
+      const dailyData: { date: string; day: number; orders: number; revenue: number; canceled: number; expenses: number }[] = [];
       const cursor = new Date(start);
       while (cursor <= end) {
         const key = toArDateStr(cursor);
@@ -264,6 +307,7 @@ export function useOrdersAnalytics(
           orders: dailyMap[key]?.orders || 0,
           revenue: dailyMap[key]?.revenue || 0,
           canceled: dailyMap[key]?.canceled || 0,
+          expenses: dailyMap[key]?.expenses || 0,
         });
         cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
@@ -271,7 +315,6 @@ export function useOrdersAnalytics(
       return {
         completedOrders: currentCompleted,
         completedOrdersChange: pct(currentCompleted, prevCompleted),
-        totalRevenue: currentRevenue,
         revenueChange: pct(currentRevenue, prevRevenue),
         avgOrdersPerDay,
         avgOrdersPerDayChange: pct(avgOrdersPerDay, prevAvgOrdersPerDay),
@@ -280,6 +323,17 @@ export function useOrdersAnalytics(
         canceledOrders: currentCanceled,
         canceledOrdersChange: pct(currentCanceled, prevCanceled2),
         dailyData,
+        // finanzas-gastos-recetas PR6 — spread of computeNetRevenue's result
+        // (totalRevenue/expensesTotal/commissionTotal/netRevenue) plus the
+        // period-over-period deltas via the same `pct` helper every other
+        // metric above already uses. No signature change to this hook:
+        // these are additive fields /rendimiento simply doesn't consume.
+        ...netRevenueResult,
+        expensesChange: pct(expensesTotal, prevExpensesTotal),
+        netRevenueChange: pct(
+          netRevenueResult.netRevenue,
+          prevRevenue - prevExpensesTotal,
+        ),
       };
     },
   });

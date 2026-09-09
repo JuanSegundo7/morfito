@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InsumosTab } from "@/components/finanzas/insumos-tab";
 import { RecetasTab } from "@/components/finanzas/recetas-tab";
 import { GastosTab } from "@/components/finanzas/gastos-tab";
+import { ResumenTab } from "@/components/finanzas/resumen-tab";
 
 const FINANZAS_TABS = ["resumen", "gastos", "insumos", "recetas"] as const;
 type FinanzasTab = (typeof FINANZAS_TABS)[number];
@@ -25,8 +25,15 @@ function isFinanzasTab(value: string | null): value is FinanzasTab {
  * history. An unknown/absent `tab` value falls back to "resumen" instead of
  * crashing or rendering blank.
  *
- * Insumos, Recetas and Gastos render real content as of PR4 — Resumen is
- * still a placeholder that PR6 replaces.
+ * All four tabs render real content as of PR6.
+ *
+ * D9 (design.md): Resumen's `<TabsContent>` mounts `<ResumenTab />` behind
+ * an explicit `activeTab === "resumen" &&` guard instead of relying on
+ * Radix's own default unmount-when-inactive behavior. Radix already does
+ * that today, but that's an *implicit* guarantee one `forceMount` prop away
+ * from silently re-enabling ResumenTab's analytics query on every page load
+ * (e.g. if someone later adds a tab-crossfade animation). NEVER add
+ * `forceMount` to any `TabsContent` in this file.
  */
 export function FinanzasTabs() {
   const router = useRouter();
@@ -52,8 +59,8 @@ export function FinanzasTabs() {
         <TabsTrigger value="recetas">Recetas</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="resumen" className="flex-1 overflow-auto p-6">
-        <PlaceholderPane />
+      <TabsContent value="resumen" className="flex flex-1 flex-col overflow-hidden">
+        {activeTab === "resumen" && <ResumenTab />}
       </TabsContent>
 
       <TabsContent value="gastos" className="flex flex-1 flex-col overflow-hidden">
@@ -68,17 +75,5 @@ export function FinanzasTabs() {
         <RecetasTab />
       </TabsContent>
     </Tabs>
-  );
-}
-
-/** Shared placeholder for the tabs not yet implemented (Resumen) — PR6
- * replaces this with real content. */
-function PlaceholderPane() {
-  return (
-    <Card className="bg-card">
-      <CardContent className="flex items-center justify-center py-16 text-center text-muted-foreground">
-        Próximamente
-      </CardContent>
-    </Card>
   );
 }
