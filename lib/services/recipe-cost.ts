@@ -146,3 +146,93 @@ export function computeMargin(basePrice: number, cost: number): MarginResult {
 
   return { profit, marginPct };
 }
+
+// Floating-point division isn't exact (e.g. 0.3 / 0.1 evaluates to
+// 2.9999999999999996, not 3) — this epsilon is added before flooring so a
+// line that should exactly divide out doesn't get shorted by one unit.
+const QUANTITY_EPSILON = 1e-9;
+
+export interface MakeableCountResult {
+  count: number | null;
+  limitingSupplyId: string | null;
+  /**
+   * True when at least one recipe line's supply could not be resolved —
+   * mirrors `ProductCostResult.incomplete`. Unlike cost, an unresolvable
+   * line here is simply excluded from the MIN rather than counted as 0;
+   * `incomplete` is what tells the caller this count may not reflect the
+   * full recipe.
+   */
+  incomplete: boolean;
+}
+
+/**
+ * How many units a single recipe line's on-hand stock can produce, given
+ * that line's already-scaled (effective) quantity per unit. Returns null
+ * when `effectiveQuantity` is not a usable divisor (<= 0) rather than a
+ * misleading 0 — a malformed/misconfigured line should never look like "no
+ * stock" or falsely win the MIN in `computeMakeableCount`.
+ */
+export function computeLineMakeable(
+  stockQuantity: number,
+  effectiveQuantity: number,
+): number | null {
+  if (effectiveQuantity <= 0) {
+    return null;
+  }
+
+  // Negative stock_quantity is a deliberate, reachable state in this repo
+  // (scripts/041-supplies-and-stock.sql has no non-negative constraint) —
+  // it means "short by N", not an error. A negative makeable count is
+  // meaningless to display, so clamp at 0 rather than rejecting it.
+  return Math.max(0, Math.floor(stockQuantity / effectiveQuantity + QUANTITY_EPSILON));
+}
+
+/**
+ * How many units of a product can currently be made from on-hand supply
+ * stock — the MIN across recipe lines of `computeLineMakeable`, plus which
+ * supply is the bottleneck. Reuses `resolveRecipeQuantities` (the same
+ * function `computeProductCost` calls) rather than re-deriving
+ * `quantity * factor` itself, so variant scaling can never drift between
+ * cost math and makeable-count math.
+ *
+ * Deliberately diverges from `computeProductCost` on inactive supplies:
+ * cost EXCLUDES inactive lines to avoid reporting a possibly-stale total,
+ * but makeable-count INCLUDES them (using their current stock_quantity
+ * as-is) — under-reporting how much you can make is the safe direction
+ * here, silently ignoring a real ingredient is not.
+ */
+export function computeMakeableCount(
+  recipe: ProductSupplyWithSupply[],
+  variantFactors?: Record<string, number>,
+): MakeableCountResult {
+  let count: number | null = null;
+  let limitingSupplyId: string | null = null;
+  let incomplete = false;
+
+  const effectiveQuantities = resolveRecipeQuantities(recipe, variantFactors);
+
+  recipe.forEach((line, index) => {
+    const supply = line.supply;
+
+    if (!supply) {
+      incomplete = true;
+      return;
+    }
+
+    const lineMakeable = computeLineMakeable(
+      supply.stock_quantity,
+      effectiveQuantities[index],
+    );
+
+    if (lineMakeable === null) {
+      return;
+    }
+
+    if (count === null || lineMakeable < count) {
+      count = lineMakeable;
+      limitingSupplyId = line.supply_id;
+    }
+  });
+
+  return { count, limitingSupplyId, incomplete };
+}

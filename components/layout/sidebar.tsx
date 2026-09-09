@@ -13,7 +13,7 @@ import {
   User,
   LogOut,
   CreditCard,
-  Package,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,8 +53,10 @@ const navigation = [
   { name: "Precios", href: "/precios", icon: DollarSign },
   // Gated by stock_management via SERVICE_NAV_HREFS (lib/service-nav-map.ts)
   // — hidden by isNavItemVisible below whenever that service is inactive,
-  // same as web_orders-gated items above.
-  { name: "Insumos", href: "/insumos", icon: Package },
+  // same as web_orders-gated items above. finanzas-gastos-recetas PR1:
+  // points at the new /finanzas shell (Insumos is now a tab there, see
+  // components/finanzas/finanzas-tabs.tsx) instead of the old /insumos page.
+  { name: "Finanzas", href: "/finanzas", icon: Wallet },
   { name: "Mi Plan", href: "/plan", icon: CreditCard },
 ];
 
