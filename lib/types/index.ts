@@ -380,6 +380,44 @@ export interface Expense {
    */
   supply_id: string | null;
   quantity: number | null;
+  /**
+   * Set by the "Cargar pago" flow when this expense satisfies a
+   * weekly/biweekly template (scripts/047). ON DELETE SET NULL — deleting a
+   * template NEVER deletes the payment. Read only by the
+   * "N de M pagos cargados" counter, which matches on this id and never on
+   * description or category.
+   */
+  recurring_expense_id: string | null;
+  created_at: string;
+}
+
+export type RecurringExpenseFrequency = "weekly" | "biweekly" | "monthly";
+
+/**
+ * A fixed-cost TEMPLATE (scripts/047-recurring-expenses.sql). Never a money
+ * movement by itself: `monthly` rows are prorated on read into
+ * useOrdersAnalytics' expensesTotal; `weekly`/`biweekly` rows contribute
+ * EXACTLY ZERO and only declare a payment cadence, whose real payments are
+ * one-off `Expense` rows carrying `recurring_expense_id`.
+ *
+ * Has no supply_id/quantity ON PURPOSE — a recurring expense never touches
+ * stock, not even with category "supplies". See 047's header.
+ */
+export interface RecurringExpense {
+  id: string;
+  /** NULL for weekly/biweekly. Required for monthly, enforced by 047's
+   *  recurring_expenses_monthly_amount CHECK. Supabase may hand DECIMAL back
+   *  as a string, so every read site coerces with Number() — same convention
+   *  as orders.total_amount throughout use-orders-history.ts. */
+  amount: number | null;
+  category: ExpenseCategory;
+  /** NOT NULL in the DB — identifies the template. Not a join key: the
+   *  payment counter matches on recurring_expense_id, so renaming is safe. */
+  description: string;
+  frequency: RecurringExpenseFrequency;
+  start_date: string; // YYYY-MM-DD
+  /** INCLUSIVE last day the template applies; null = still active. */
+  end_date: string | null;
   created_at: string;
 }
 
