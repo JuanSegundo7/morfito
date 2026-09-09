@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ChevronLeft, ChevronRight, Plus, TriangleAlert, X } from "lucide-react";
 import { useExpenses, useDeleteExpense } from "@/lib/hooks/expenses/use-expenses";
+import { useOrdersAnalytics } from "@/lib/hooks/orders/use-orders-history";
 import { ExpenseList, EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
 import { ExpenseFormDialog } from "@/components/finanzas/expense-form-dialog";
 import { formatCurrency } from "@/lib/utils/format";
@@ -75,6 +76,11 @@ export function GastosTab() {
 
   const { data: expenses, isLoading } = useExpenses(start, end);
   const deleteExpense = useDeleteExpense(start, end);
+  // gastos-recurrentes PR3 — same period the "Del período" list above already
+  // uses (anchorDate, month mode, matching monthRange's own boundaries).
+  // Reads expensesByCategory instead of running a local reduce, so this
+  // tab's category totals can never drift from Resumen's (design D7).
+  const { data: analytics } = useOrdersAnalytics(anchorDate);
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -88,17 +94,6 @@ export function GastosTab() {
       );
     }
   };
-
-  const totalsByCategory = useMemo(() => {
-    const totals = Object.fromEntries(ALL_CATEGORIES.map((c) => [c, 0])) as Record<
-      ExpenseCategory,
-      number
-    >;
-    for (const expense of expenses ?? []) {
-      totals[expense.category] += Number(expense.amount);
-    }
-    return totals;
-  }, [expenses]);
 
   const handlePrev = () =>
     setAnchorDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -167,7 +162,7 @@ export function GastosTab() {
                   {EXPENSE_CATEGORY_LABELS[category]}
                 </span>
                 <span className="text-amount tabular-nums font-semibold">
-                  {formatCurrency(totalsByCategory[category])}
+                  {formatCurrency(analytics?.expensesByCategory?.[category] ?? 0)}
                 </span>
               </CardContent>
             </Card>

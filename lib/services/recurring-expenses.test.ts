@@ -231,6 +231,24 @@ describe("expandRecurringExpensesDaily", () => {
     expect(daily).toEqual([]);
     expect(grouped).toEqual([]);
   });
+
+  it("3.10 (gastos-recurrentes PR3): zero templates produces zero allocations and a zero sum — the structural basis for PR3 being numerically a no-op", () => {
+    // This is what use-orders-history.ts's queryFn actually calls with the
+    // day the change ships: `recurring_expenses` is empty (nothing can
+    // populate it until PR4), so `templates` is `[]` on every read.
+    const daily = expandRecurringExpensesDaily(
+      [],
+      parseCalendarDate("2026-01-01"),
+      parseCalendarDate("2026-01-31"),
+    );
+
+    expect(daily).toEqual([]);
+    // sumAllocations reduces with an initial accumulator of 0, so an empty
+    // array short-circuits to exactly 0 — never NaN, never undefined. This
+    // is why `expensesTotal = oneOffExpensesTotal + sumAllocations([])` is
+    // byte-identical to the pre-PR3 `expensesTotal = oneOffExpensesTotal`.
+    expect(sumAllocations(daily)).toBe(0);
+  });
 });
 
 describe("expandRecurringExpenses", () => {

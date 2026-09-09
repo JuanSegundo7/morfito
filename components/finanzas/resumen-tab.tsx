@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { useOrdersAnalytics } from "@/lib/hooks/orders/use-orders-history";
-import { useExpenses } from "@/lib/hooks/expenses/use-expenses";
 import { EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
 import { formatCurrency } from "@/lib/utils/format";
 import {
@@ -69,14 +68,16 @@ const ALL_CATEGORIES = Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[]
  * `computeNetRevenue`'s single call site. This component never subtracts or
  * adds money into those numbers (see design.md D5).
  *
- * The ONE local aggregation this component does perform is the
- * expenses-by-category breakdown, via `useExpenses` + a `reduce` — the same
- * pattern gastos-tab.tsx's own `totalsByCategory` already uses. This is not
- * a netRevenue recomputation (nothing here is subtracted from revenue); it
- * is a category split of money `useOrdersAnalytics` doesn't itself
- * categorize, and design.md's Interfaces section never added a per-category
- * shape to that hook's contract. `EXPENSE_CATEGORY_LABELS` is imported from
- * expense-list.tsx, not redeclared, per the task's explicit instruction.
+ * gastos-recurrentes PR3: the expenses-by-category breakdown is no longer a
+ * local aggregation. It used to run its own `useExpenses` + `reduce` here
+ * (the same pattern gastos-tab.tsx's own `totalsByCategory` used to), which
+ * meant the category cards and the Gastos tile above them were one
+ * arithmetic change away from disagreeing — exactly the bug this PR's design
+ * (D7) closes. `analytics.expensesByCategory` is now computed once, inside
+ * `useOrdersAnalytics`, from the same one-off + prorated-recurring sources
+ * that feed `expensesTotal`, so the two can never drift apart.
+ * `EXPENSE_CATEGORY_LABELS` is imported from expense-list.tsx, not
+ * redeclared, per the task's explicit instruction.
  */
 export function ResumenTab() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -92,46 +93,6 @@ export function ResumenTab() {
     viewMode,
     resolvedCustomRange,
   );
-
-  // Date-range strings (YYYY-MM-DD, AR time) for the category breakdown's
-  // useExpenses call — same derivation IIFE pattern as /rendimiento's
-  // panelStartDate/panelEndDate for ExternalIncomePanel.
-  const { startDateStr, endDateStr } = (() => {
-    const toArStr = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: TZ });
-    if (viewMode === "custom" && customRange) {
-      return { startDateStr: toArStr(customRange.from), endDateStr: toArStr(customRange.to) };
-    }
-    const arDate = new Date(selectedDate.toLocaleString("en-US", { timeZone: TZ }));
-    if (viewMode === "week") {
-      const day = arDate.getDay();
-      const diffToMonday = day === 0 ? -6 : 1 - day;
-      const monday = new Date(arDate);
-      monday.setDate(arDate.getDate() + diffToMonday);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      return { startDateStr: toArStr(monday), endDateStr: toArStr(sunday) };
-    }
-    const year = arDate.getFullYear();
-    const month = arDate.getMonth();
-    const lastDate = new Date(year, month + 1, 0).getDate();
-    return {
-      startDateStr: `${year}-${String(month + 1).padStart(2, "0")}-01`,
-      endDateStr: `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDate).padStart(2, "0")}`,
-    };
-  })();
-
-  const { data: expenses, isLoading: expensesLoading } = useExpenses(startDateStr, endDateStr);
-
-  const totalsByCategory = (() => {
-    const totals = Object.fromEntries(ALL_CATEGORIES.map((c) => [c, 0])) as Record<
-      ExpenseCategory,
-      number
-    >;
-    for (const expense of expenses ?? []) {
-      totals[expense.category] += Number(expense.amount);
-    }
-    return totals;
-  })();
 
   const periodLabel = getPeriodLabel(selectedDate, viewMode, customRange);
 
@@ -318,7 +279,7 @@ export function ResumenTab() {
           <CardTitle>Gastos por categoría</CardTitle>
         </CardHeader>
         <CardContent>
-          {expensesLoading ? (
+          {isLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               {ALL_CATEGORIES.map((c) => (
                 <Skeleton key={c} className="h-16" />
@@ -335,7 +296,7 @@ export function ResumenTab() {
                     {EXPENSE_CATEGORY_LABELS[category]}
                   </span>
                   <span className="text-subheadline font-semibold tabular-nums">
-                    {formatCurrency(totalsByCategory[category])}
+                    {formatCurrency(analytics?.expensesByCategory?.[category] ?? 0)}
                   </span>
                 </div>
               ))}

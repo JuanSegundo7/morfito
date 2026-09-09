@@ -197,60 +197,60 @@ task per module makes its RED set pass; REFACTOR cleans up without changing outc
 ## Phase 3 (PR3): Analytics fold-in + `expensesByCategory` (~280 lines, numerically a no-op — zero
 templates exist until PR4)
 
-- [ ] 3.1 `[hook,small]` Modify `lib/hooks/orders/use-orders-history.ts` — add imports:
+- [x] 3.1 `[hook,small]` Modify `lib/hooks/orders/use-orders-history.ts` — add imports:
       `parseCalendarDate` from `@/lib/utils/calendar-date`; `expandRecurringExpensesDaily`,
       `sumAllocations` from `@/lib/services/recurring-expenses`, beside `:6`'s `computeNetRevenue`
       import.
-- [ ] 3.2 `[hook,medium]` Modify `use-orders-history.ts` — add the 9th query: `{ data:
+- [x] 3.2 `[hook,medium]` Modify `use-orders-history.ts` — add the 9th query: `{ data:
       recurringTemplates, error: e9 }` destructured after `:160`'s `prevExpenses` slot; the unfiltered
       `.from("recurring_expenses").select("id, amount, category, description, frequency, start_date,
       end_date")` call inside the `Promise.all` (**no `WHERE`/date filter — rule 5**, with the reasoning
       comment carried verbatim from design); `if (e9) throw e9;` after the existing `:217` error checks.
       Add `category` to the current-period expenses select (`:199-202` → `.select("date, amount,
       category")`); the previous-period query stays `"date, amount"` (total-only).
-- [ ] 3.3 `[hook,medium]` Modify `use-orders-history.ts` — insert the calendar-conversion block (rule 6)
+- [x] 3.3 `[hook,medium]` Modify `use-orders-history.ts` — insert the calendar-conversion block (rule 6)
       right after `if (e9) throw e9;`: `periodStartCal`/`periodEndCal`/`prevPeriodStartCal`/
       `prevPeriodEndCal` via `parseCalendarDate` on the existing date strings; **compute
       `recurringAllocations = expandRecurringExpensesDaily(templates, periodStartCal, periodEndCal)`
       exactly ONCE and reuse it for the total, the daily fold, and the category split (design D6)** —
       this is what makes `sum(dailyData[].expenses) === expensesTotal` a structural property, not merely
       a tested one; also compute `prevRecurringTotal` via a second call for the previous period.
-- [ ] 3.4 `[hook,small]` Modify `use-orders-history.ts`'s totals assembly (`:239-242`) — `expensesTotal =
+- [x] 3.4 `[hook,small]` Modify `use-orders-history.ts`'s totals assembly (`:239-242`) — `expensesTotal =
       oneOffExpensesTotal + sumAllocations(recurringAllocations)`; `prevExpensesTotal =
       prevOneOffExpensesTotal + prevRecurringTotal` (rule 7 — folds the previous period too, or the
       first period with a template manufactures a phantom `expensesChange` spike). The
       `computeNetRevenue` call site (`:246-250`) stays **byte-identical** — only the value it receives
       changes.
-- [ ] 3.5 `[hook,medium]` Modify `use-orders-history.ts` — build `expensesByCategory` (rule 9, D7,
+- [x] 3.5 `[hook,medium]` Modify `use-orders-history.ts` — build `expensesByCategory` (rule 9, D7,
       **merged shape per D4**: `Record<ExpenseCategory, number>`) as an object literal with all 5 keys
       initialized to `0` (never `Object.fromEntries` — the literal is checked against the
       `ExpenseCategory` union at compile time), summing one-off `expenses` rows and
       `recurringAllocations` together.
-- [ ] 3.6 `[hook,small]` Modify `use-orders-history.ts` — fold `recurringAllocations` into
+- [x] 3.6 `[hook,small]` Modify `use-orders-history.ts` — fold `recurringAllocations` into
       `dailyMap[key].expenses` immediately after the existing one-off fold (`:292-296`), before the
       gap-fill loop (rule 8). Keys align exactly because `allocation.date` is `formatCalendarDate` over
       the same string range the gap-fill loop walks via `toArDateStr`.
-- [ ] 3.7 `[hook,small]` Modify `use-orders-history.ts` — add `expensesByCategory` to the returned object
+- [x] 3.7 `[hook,small]` Modify `use-orders-history.ts` — add `expensesByCategory` to the returned object
       (`:315-337`), beside the `computeNetRevenue` spread. No signature change — `/rendimiento`'s
       existing call site keeps working, it just gains an unread field.
-- [ ] 3.8 `[UI,medium]` Modify `components/finanzas/resumen-tab.tsx` — **delete** the `useExpenses`
+- [x] 3.8 `[UI,medium]` Modify `components/finanzas/resumen-tab.tsx` — **delete** the `useExpenses`
       import, the date-string IIFE (`:99-121`), the `useExpenses` call, the `totalsByCategory` IIFE
       (`:123-134`); collapse the `expensesLoading` skeleton branch into `isLoading`; category cards read
       `analytics?.expensesByCategory?.[category] ?? 0`; update the stale doc comment that currently
       documents the local reduce as deliberate. `ALL_CATEGORIES` stays (render order, not aggregation).
       *(spec: revenue-analytics — `expensesByCategory` computed once in the hook, D7)*
-- [ ] 3.9 `[UI,small]` Modify `components/finanzas/gastos-tab.tsx` — **delete** the `totalsByCategory`
+- [x] 3.9 `[UI,small]` Modify `components/finanzas/gastos-tab.tsx` — **delete** the `totalsByCategory`
       `useMemo` (`:92-101`) and the now-unused `useMemo` import; mount `useOrdersAnalytics` for the
       tab's already-derived month and read `expensesByCategory` from it. *(spec: revenue-analytics — no
       component recomputes its own category breakdown)*
-- [ ] 3.10 GATE `[test,medium]` **Zero-templates byte-identical safety proof** — with `recurring_expenses`
+- [x] 3.10 GATE `[test,medium]` **Zero-templates byte-identical safety proof** — with `recurring_expenses`
       empty, assert `expensesTotal`, `dailyData`, `expensesChange`, `netRevenueChange`, `netRevenue`,
       and `expensesByCategory` are all identical to the pre-PR3 `finanzas-gastos-recetas` computation
       for the same one-off expenses and orders fixture. This is the proposal's own success-criteria item
       ("with zero templates configured, every Resumen and Gastos figure is byte-identical to today") and
       MUST be verified explicitly before this PR is considered done, since Unit 3 shipping ahead of any
       template is the entire reason it is safe to land the arithmetic change now.
-- [ ] 3.11 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
+- [x] 3.11 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
 
 ### Manual QA — Phase 3
 
