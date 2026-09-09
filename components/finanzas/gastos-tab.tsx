@@ -13,12 +13,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, TriangleAlert, X } from "lucide-react";
 import { useExpenses, useDeleteExpense } from "@/lib/hooks/expenses/use-expenses";
 import { ExpenseList, EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
 import { ExpenseFormDialog } from "@/components/finanzas/expense-form-dialog";
 import { formatCurrency } from "@/lib/utils/format";
 import type { Expense, ExpenseCategory } from "@/lib/types";
+import type { CreateExpenseResult } from "@/lib/hooks/expenses/use-expenses";
 
 const TZ = "America/Argentina/Buenos_Aires";
 
@@ -57,9 +58,16 @@ function monthRange(date: Date): { start: string; end: string; label: string } {
 }
 
 /**
- * finanzas-gastos-recetas PR4. Period filter + always-5 category totals +
- * expense list + create/delete. No stock effect wired up yet (PR5) — see
- * ExpenseFormDialog's note.
+ * finanzas-gastos-recetas PR4/PR5. Period filter + always-5 category totals
+ * + expense list + create/delete. Since PR5, a "supplies"-style expense with
+ * supply_id+quantity bumps stock on create and reverses it on delete (see
+ * use-expenses.ts / use-expense-stock-sync.ts). `bumpFailedBanner` holds
+ * the persistent partial-failure banner state: the expense saved, but the
+ * bump itself failed — the toast.warning fired inside useCreateExpense is
+ * the immediate signal, this banner is the one that survives after the
+ * dialog closes. No retry action is ever offered for the bump step (D2:
+ * a retry after a partially-applied bump can't know how far it got); the
+ * only recovery path is a manual adjustment in the Insumos tab.
  */
 export function GastosTab() {
   const [anchorDate, setAnchorDate] = useState(() => new Date());
@@ -71,6 +79,15 @@ export function GastosTab() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [bumpFailedBanner, setBumpFailedBanner] = useState<string | null>(null);
+
+  const handleExpenseCreated = (result: CreateExpenseResult) => {
+    if (result.stockBumpFailed) {
+      setBumpFailedBanner(
+        "El gasto se guardó, pero no se pudo actualizar el stock. Ajustalo manualmente en la pestaña Insumos.",
+      );
+    }
+  };
 
   const totalsByCategory = useMemo(() => {
     const totals = Object.fromEntries(ALL_CATEGORIES.map((c) => [c, 0])) as Record<
@@ -91,7 +108,7 @@ export function GastosTab() {
   const handleDelete = async () => {
     if (!deletingExpense) return;
     try {
-      await deleteExpense.mutateAsync(deletingExpense.id);
+      await deleteExpense.mutateAsync(deletingExpense);
     } catch {
       /* alert already shown by the mutation's onError */
     }
@@ -121,6 +138,25 @@ export function GastosTab() {
             Nuevo gasto
           </Button>
         </div>
+
+        {/* Partial-failure banner: expense saved, stock bump failed. No
+            retry offered — see this component's doc comment. */}
+        {bumpFailedBanner && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <TriangleAlert className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+            <p className="text-caption flex-1 text-amber-900 dark:text-amber-200">
+              {bumpFailedBanner}
+            </p>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="text-amber-700 hover:text-amber-900 shrink-0"
+              onClick={() => setBumpFailedBanner(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
         {/* Category totals — all 5 always shown, $0 when empty */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -154,7 +190,13 @@ export function GastosTab() {
         </Card>
       </div>
 
-      <ExpenseFormDialog open={formOpen} onOpenChange={setFormOpen} startDate={start} endDate={end} />
+      <ExpenseFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        startDate={start}
+        endDate={end}
+        onCreated={handleExpenseCreated}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="ios-glass rounded-2xl">

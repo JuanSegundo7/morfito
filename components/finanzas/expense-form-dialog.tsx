@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { useSupplies } from "@/lib/hooks/supplies/use-supplies";
-import { useCreateExpense } from "@/lib/hooks/expenses/use-expenses";
+import { useCreateExpense, type CreateExpenseResult } from "@/lib/hooks/expenses/use-expenses";
 import { EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
 import type { ExpenseCategory } from "@/lib/types";
 
@@ -46,25 +46,33 @@ interface ExpenseFormDialogProps {
    * via useCreateExpense, same as ExternalIncomePanel's pattern. */
   startDate: string;
   endDate: string;
+  /** Called after a successful save (bump-failed or not) so the Gastos tab
+   * can show its own partial-failure banner — the toast.warning fired
+   * inside useCreateExpense is immediate feedback, this is the persistent
+   * one. */
+  onCreated?: (result: CreateExpenseResult) => void;
 }
 
 /**
- * finanzas-gastos-recetas PR4. Create-only (no edit — D6). Date/amount/
+ * finanzas-gastos-recetas PR4/PR5. Create-only (no edit — D6). Date/amount/
  * category are always required; supply_id/quantity are optional but must
  * be filled together, mirroring scripts/045-expenses.sql's
  * expenses_supply_bump_pairing CHECK client-side so an invalid combination
  * never reaches the INSERT.
  *
- * NOTE: in THIS PR, choosing a supply + quantity captures and persists the
- * pairing but has NO stock effect — the bump is wired up in PR5
- * (lib/hooks/supplies/use-expense-stock-sync.ts). The note below is the
- * user-facing signal for that gap.
+ * Since PR5, choosing a supply + quantity actually bumps
+ * `supplies.stock_quantity` on save (lib/hooks/supplies/
+ * use-expense-stock-sync.ts) — the preview line below tells the operator
+ * what will happen before they confirm. If the bump itself fails, the
+ * expense is still saved; useCreateExpense surfaces a toast.warning and the
+ * Gastos tab shows a manual-adjust banner (never a retry for that step).
  */
 export function ExpenseFormDialog({
   open,
   onOpenChange,
   startDate,
   endDate,
+  onCreated,
 }: ExpenseFormDialogProps) {
   const { data: supplies } = useSupplies();
   const createExpense = useCreateExpense(startDate, endDate);
@@ -97,6 +105,7 @@ export function ExpenseFormDialog({
 
   const parsedAmount = parseFloat(amount.replace(",", "."));
   const parsedQuantity = parseFloat(quantity.replace(",", "."));
+  const selectedSupply = supplies?.find((s) => s.id === supplyId) ?? null;
 
   // Mirrors the DB's expenses_supply_bump_pairing CHECK: both present or
   // neither. A supply chosen without a quantity (or vice versa) blocks save
@@ -114,7 +123,7 @@ export function ExpenseFormDialog({
     if (!canSave) return;
 
     try {
-      await createExpense.mutateAsync({
+      const result = await createExpense.mutateAsync({
         date,
         amount: parsedAmount,
         category,
@@ -122,6 +131,7 @@ export function ExpenseFormDialog({
         supply_id: supplyId,
         quantity: supplyId ? parsedQuantity : null,
       });
+      onCreated?.(result);
       handleClose();
     } catch {
       /* react-query onError already surfaces the alert */
@@ -246,10 +256,10 @@ export function ExpenseFormDialog({
             </div>
           </div>
 
-          {supplyId && (
+          {selectedSupply && pairingValid && (
             <p className="text-caption text-muted-foreground rounded-lg bg-muted/40 px-3 py-2">
-              El stock todavía no se actualiza automáticamente con este gasto — vas a tener que
-              ajustarlo manualmente en la pestaña Insumos.
+              Esto va a sumar {parsedQuantity} {selectedSupply.unit} al stock de{" "}
+              {selectedSupply.name}.
             </p>
           )}
         </div>
