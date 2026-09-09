@@ -112,24 +112,24 @@ task per module makes its RED set pass; REFACTOR cleans up without changing outc
 
 ### 2a — `lib/utils/calendar-date.ts` (independently shippable as PR2a if the split is chosen)
 
-- [ ] 2.1 RED `[test,small]` Add to `lib/utils/calendar-date.test.ts`: `parseCalendarDate` /
+- [x] 2.1 RED `[test,small]` Add to `lib/utils/calendar-date.test.ts`: `parseCalendarDate` /
       `formatCalendarDate` round-trip for `"2026-01-31"`, `"2026-02-28"`, `"2024-02-29"` (leap year);
       assert `parseCalendarDate(...).getUTCHours() === 0` (the whole point — no `+3h` baked in).
-- [ ] 2.2 RED `[test,small]` Add test case: `daysInMonth` for Jan(31)/Feb(28)/**Feb 2024(29, leap)**/
+- [x] 2.2 RED `[test,small]` Add test case: `daysInMonth` for Jan(31)/Feb(28)/**Feb 2024(29, leap)**/
       Apr(30)/Dec(31), explicit 1-indexed-month assertion (`daysInMonth(2026, 1) === 31`, not
       0-indexed).
-- [ ] 2.3 RED `[test,small]` Add test case: `dayBefore("2026-03-01") === "2026-02-28"`;
+- [x] 2.3 RED `[test,small]` Add test case: `dayBefore("2026-03-01") === "2026-02-28"`;
       `dayBefore("2024-03-01") === "2024-02-29"` (leap); `dayBefore("2026-01-01") === "2025-12-31"`
       (year boundary) — the close-and-replace double-charge guard.
-- [ ] 2.4 RED `[test,small]` Add test case: `arTodayStr(new Date("2026-09-10T02:00:00Z")) ===
+- [x] 2.4 RED `[test,small]` Add test case: `arTodayStr(new Date("2026-09-10T02:00:00Z")) ===
       "2026-09-09"` and `arTodayStr(new Date("2026-09-10T03:00:00Z")) === "2026-09-10"` — the exact
       rule-12 AR-offset boundary (23:00 AR is already tomorrow in UTC).
-- [ ] 2.5 GREEN `[pure,medium]` Implement `lib/utils/calendar-date.ts` (D5) — `parseCalendarDate`,
+- [x] 2.5 GREEN `[pure,medium]` Implement `lib/utils/calendar-date.ts` (D5) — `parseCalendarDate`,
       `formatCalendarDate`, `daysInMonth`, `addDays`, `dayBefore`, `arTodayStr(now?: Date)` (clock
       parameterized as a default arg for testability). Make 2.1–2.4 pass. Deliberately does NOT reuse
       `arDateToUTC` (`use-orders-history.ts:17-23`) — that function's `+3h` is exactly what this module
       exists to keep out of the math.
-- [ ] 2.6 REFACTOR `[pure,small]` Clean up naming/structure without changing test outcomes; re-run
+- [x] 2.6 REFACTOR `[pure,small]` Clean up naming/structure without changing test outcomes; re-run
       `npx vitest run` to confirm still fully green.
 
 ### 2b — `lib/services/recurring-expenses.ts` (depends on 2a; independently shippable as PR2b)
