@@ -266,13 +266,13 @@ templates exist until PR4)
 ## Phase 4 (PR4, depends on PR3): "Fijos mensuales" sub-tab (~400 lines — see Review Workload Forecast
 for the optional 4a/4b split)
 
-- [ ] 4.1 `[hook,medium]` Create `lib/hooks/expenses/use-recurring-expenses.ts` —
+- [x] 4.1 `[hook,medium]` Create `lib/hooks/expenses/use-recurring-expenses.ts` —
       `recurringExpensesQueryKey()` (`["recurring-expenses"]`, no date-ranged variant — rule 5 means the
       query is always unfiltered); `invalidateRecurringExpenseQueries(queryClient)` invalidating
       `["recurring-expenses"]` AND `["orders-analytics"]` (a template mutation changes `expensesTotal`
       for every mounted period), deliberately NOT `["expenses"]`; `useRecurringExpenses()`;
       `useCreateRecurringExpense()`.
-- [ ] 4.2 `[hook,small]` Add `useDeleteRecurringExpense()` to `use-recurring-expenses.ts` — **D4: the
+- [x] 4.2 `[hook,small]` Add `useDeleteRecurringExpense()` to `use-recurring-expenses.ts` — **D4: the
       mutation throws before issuing the DELETE unless `template.start_date >= arTodayStr()`. Boundary
       is `>=` — a template starting today is still deletable.** This is the second layer; the UI omits
       the button entirely as the primary guard (task 4.4).
@@ -285,13 +285,13 @@ for the optional 4a/4b split)
       same description). No client-side transaction exists or is faked (Supabase JS has none — same
       standing position as `use-order-stock-sync.ts:55-62`). *(design D9 — explicit task, not folded
       into the update dialog)*
-- [ ] 4.4 `[UI,medium]` Create `components/finanzas/recurring-expense-list.tsx` — row: description,
+- [x] 4.4 `[UI,medium]` Create `components/finanzas/recurring-expense-list.tsx` — row: description,
       category badge, frequency badge, Activo/"Cerrado el {end_date}" badge, "Desde {start_date}", and
       either `"{amount}/mes · {prorated} en este período"` (monthly, via `expandRecurringExpenses`) or
       the `previewPaydayDates` cadence preview (weekly/biweekly, D1). **Delete button rendered ONLY when
       `start_date >= arTodayStr()` — absent, never disabled-with-a-tooltip (D4).** *(spec:
       recurring-expense-templates — delete action absent, not disabled, once `start_date < today`)*
-- [ ] 4.5 `[UI,medium]` Create `components/finanzas/recurring-expense-form-dialog.tsx` — category,
+- [x] 4.5 `[UI,medium]` Create `components/finanzas/recurring-expense-form-dialog.tsx` — category,
       description, frequency `Select` **always visible, no coupling to category (D6)** — no gate
       restricting weekly/biweekly to `salaries`, no forced reset to `monthly` on category change; amount
       field rendered **only when `frequency === "monthly"`**, required in that case (rule 11, mirroring
@@ -305,12 +305,12 @@ for the optional 4a/4b split)
       eliminalo y creálo de nuevo."* — a same-day correction on an unstarted template is the delete path
       (D4), not close-and-replace. *(design D10 — explicit task, not folded into "crear el dialog de
       actualizar")*
-- [ ] 4.7 `[UI,medium]` Modify `components/finanzas/gastos-tab.tsx` — nest a `Tabs`: "Del período"
+- [x] 4.7 `[UI,medium]` Modify `components/finanzas/gastos-tab.tsx` — nest a `Tabs`: "Del período"
       (existing body) / "Fijos mensuales" (new). Lift `anchorDate`/`start`/`end` above the sub-tabs so
       both share one period. Top-level `?tab=` in `finanzas-tabs.tsx` stays untouched — a 4-value union,
       not a 5th top-level tab. *(spec: finance-overview — Gastos becomes a two-sub-tab surface, top level
       unchanged)*
-- [ ] 4.8 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
+- [x] 4.8 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
 
 ### Manual QA — Phase 4 (no automated coverage; Supabase-write-ordering and UI-layer concerns)
 

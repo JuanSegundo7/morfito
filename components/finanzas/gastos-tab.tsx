@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,11 +17,17 @@ import {
 import { ChevronLeft, ChevronRight, Plus, TriangleAlert, X } from "lucide-react";
 import { useExpenses, useDeleteExpense } from "@/lib/hooks/expenses/use-expenses";
 import { useOrdersAnalytics } from "@/lib/hooks/orders/use-orders-history";
+import { useRecurringExpenses } from "@/lib/hooks/expenses/use-recurring-expenses";
 import { ExpenseList, EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
 import { ExpenseFormDialog } from "@/components/finanzas/expense-form-dialog";
+import { RecurringExpenseList } from "@/components/finanzas/recurring-expense-list";
+import { RecurringExpenseFormDialog } from "@/components/finanzas/recurring-expense-form-dialog";
 import { formatCurrency } from "@/lib/utils/format";
 import type { Expense, ExpenseCategory } from "@/lib/types";
 import type { CreateExpenseResult } from "@/lib/hooks/expenses/use-expenses";
+
+const GASTOS_SUB_TABS = ["periodo", "fijos"] as const;
+type GastosSubTab = (typeof GASTOS_SUB_TABS)[number];
 
 const TZ = "America/Argentina/Buenos_Aires";
 
@@ -69,10 +76,19 @@ function monthRange(date: Date): { start: string; end: string; label: string } {
  * dialog closes. No retry action is ever offered for the bump step (D2:
  * a retry after a partially-applied bump can't know how far it got); the
  * only recovery path is a manual adjustment in the Insumos tab.
+ *
+ * gastos-recurrentes PR4a: nests a "Del período" / "Fijos mensuales"
+ * sub-Tabs inside this component. `anchorDate`/`start`/`end` are lifted
+ * above the sub-tabs (they already lived at this level) so both share
+ * exactly one period — "Fijos mensuales" prorates and previews cadences
+ * for the same month "Del período" is showing. This is an internal
+ * useState, NOT synced to finanzas-tabs.tsx's `?tab=` — the top-level tab
+ * union stays a 4-value union, this is not a 5th top-level tab.
  */
 export function GastosTab() {
   const [anchorDate, setAnchorDate] = useState(() => new Date());
   const { start, end, label } = monthRange(anchorDate);
+  const [subTab, setSubTab] = useState<GastosSubTab>("periodo");
 
   const { data: expenses, isLoading } = useExpenses(start, end);
   const deleteExpense = useDeleteExpense(start, end);
@@ -81,8 +97,13 @@ export function GastosTab() {
   // Reads expensesByCategory instead of running a local reduce, so this
   // tab's category totals can never drift from Resumen's (design D7).
   const { data: analytics } = useOrdersAnalytics(anchorDate);
+  // gastos-recurrentes PR4a — unfiltered, per rule 5 (recurringExpensesQueryKey
+  // carries no date-range variant); the period is applied client-side by
+  // RecurringExpenseList when it prorates/previews for `start`/`end`.
+  const { data: recurringExpenses, isLoading: isRecurringLoading } = useRecurringExpenses();
 
   const [formOpen, setFormOpen] = useState(false);
+  const [recurringFormOpen, setRecurringFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [bumpFailedBanner, setBumpFailedBanner] = useState<string | null>(null);
@@ -114,7 +135,8 @@ export function GastosTab() {
   return (
     <>
       <div className="flex-1 overflow-auto p-6 space-y-4">
-        {/* Period selector */}
+        {/* Period selector — shared by both sub-tabs (anchorDate lifted
+            above the Tabs below). */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={handlePrev} className="bg-card h-9 w-9">
@@ -128,61 +150,90 @@ export function GastosTab() {
             </Button>
           </div>
 
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo gasto
-          </Button>
+          {subTab === "periodo" ? (
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo gasto
+            </Button>
+          ) : (
+            <Button onClick={() => setRecurringFormOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo gasto fijo
+            </Button>
+          )}
         </div>
 
-        {/* Partial-failure banner: expense saved, stock bump failed. No
-            retry offered — see this component's doc comment. */}
-        {bumpFailedBanner && (
-          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <TriangleAlert className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-            <p className="text-caption flex-1 text-amber-900 dark:text-amber-200">
-              {bumpFailedBanner}
-            </p>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              className="text-amber-700 hover:text-amber-900 shrink-0"
-              onClick={() => setBumpFailedBanner(null)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <Tabs value={subTab} onValueChange={(v) => setSubTab(v as GastosSubTab)}>
+          <TabsList>
+            <TabsTrigger value="periodo">Del período</TabsTrigger>
+            <TabsTrigger value="fijos">Fijos mensuales</TabsTrigger>
+          </TabsList>
 
-        {/* Category totals — all 5 always shown, $0 when empty */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {ALL_CATEGORIES.map((category) => (
-            <Card key={category} className="bg-card">
-              <CardContent className="p-4 flex flex-col gap-1">
-                <span className="text-caption text-muted-foreground">
-                  {EXPENSE_CATEGORY_LABELS[category]}
-                </span>
-                <span className="text-amount tabular-nums font-semibold">
-                  {formatCurrency(analytics?.expensesByCategory?.[category] ?? 0)}
-                </span>
+          <TabsContent value="periodo" className="space-y-4 pt-4">
+            {/* Partial-failure banner: expense saved, stock bump failed. No
+                retry offered — see this component's doc comment. */}
+            {bumpFailedBanner && (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                <TriangleAlert className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <p className="text-caption flex-1 text-amber-900 dark:text-amber-200">
+                  {bumpFailedBanner}
+                </p>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-amber-700 hover:text-amber-900 shrink-0"
+                  onClick={() => setBumpFailedBanner(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Category totals — all 5 always shown, $0 when empty */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {ALL_CATEGORIES.map((category) => (
+                <Card key={category} className="bg-card">
+                  <CardContent className="p-4 flex flex-col gap-1">
+                    <span className="text-caption text-muted-foreground">
+                      {EXPENSE_CATEGORY_LABELS[category]}
+                    </span>
+                    <span className="text-amount tabular-nums font-semibold">
+                      {formatCurrency(analytics?.expensesByCategory?.[category] ?? 0)}
+                    </span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Expense list */}
+            <Card className="bg-card">
+              <CardContent className="p-4">
+                <ExpenseList
+                  expenses={expenses ?? []}
+                  isLoading={isLoading}
+                  isDeleting={deleteExpense.isPending}
+                  onDelete={(expense) => {
+                    setDeletingExpense(expense);
+                    setDeleteDialogOpen(true);
+                  }}
+                />
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </TabsContent>
 
-        {/* Expense list */}
-        <Card className="bg-card">
-          <CardContent className="p-4">
-            <ExpenseList
-              expenses={expenses ?? []}
-              isLoading={isLoading}
-              isDeleting={deleteExpense.isPending}
-              onDelete={(expense) => {
-                setDeletingExpense(expense);
-                setDeleteDialogOpen(true);
-              }}
-            />
-          </CardContent>
-        </Card>
+          <TabsContent value="fijos" className="pt-4">
+            <Card className="bg-card">
+              <CardContent className="p-4">
+                <RecurringExpenseList
+                  templates={recurringExpenses}
+                  isLoading={isRecurringLoading}
+                  periodStart={start}
+                  periodEnd={end}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <ExpenseFormDialog
@@ -192,6 +243,8 @@ export function GastosTab() {
         endDate={end}
         onCreated={handleExpenseCreated}
       />
+
+      <RecurringExpenseFormDialog open={recurringFormOpen} onOpenChange={setRecurringFormOpen} />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="ios-glass rounded-2xl">
