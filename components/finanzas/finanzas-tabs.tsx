@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InsumosTab } from "@/components/finanzas/insumos-tab";
 import { RecetasTab } from "@/components/finanzas/recetas-tab";
+import { GastosTab } from "@/components/finanzas/gastos-tab";
 
 const FINANZAS_TABS = ["resumen", "gastos", "insumos", "recetas"] as const;
 type FinanzasTab = (typeof FINANZAS_TABS)[number];
@@ -24,8 +25,8 @@ function isFinanzasTab(value: string | null): value is FinanzasTab {
  * history. An unknown/absent `tab` value falls back to "resumen" instead of
  * crashing or rendering blank.
  *
- * Insumos and Recetas render real content as of PR3 — Resumen/Gastos are
- * still placeholders that later PRs in this chain (PR4-PR6) replace.
+ * Insumos, Recetas and Gastos render real content as of PR4 — Resumen is
+ * still a placeholder that PR6 replaces.
  */
 export function FinanzasTabs() {
   const router = useRouter();
@@ -55,8 +56,8 @@ export function FinanzasTabs() {
         <PlaceholderPane />
       </TabsContent>
 
-      <TabsContent value="gastos" className="flex-1 overflow-auto p-6">
-        <PlaceholderPane />
+      <TabsContent value="gastos" className="flex flex-1 flex-col overflow-hidden">
+        <GastosTab />
       </TabsContent>
 
       <TabsContent value="insumos" className="flex flex-1 flex-col overflow-hidden">
@@ -70,9 +71,8 @@ export function FinanzasTabs() {
   );
 }
 
-/** Shared placeholder for the tabs not yet implemented (Resumen/Gastos/
- * Recetas) — later PRs in the finanzas-gastos-recetas chain replace each of
- * these with real content. */
+/** Shared placeholder for the tabs not yet implemented (Resumen) — PR6
+ * replaces this with real content. */
 function PlaceholderPane() {
   return (
     <Card className="bg-card">

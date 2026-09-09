@@ -355,6 +355,35 @@ export interface ExternalIncome {
 }
 
 // ============================================
+// EXPENSES
+// ============================================
+
+export type ExpenseCategory =
+  | "supplies"
+  | "services"
+  | "salaries"
+  | "rent"
+  | "other";
+
+export interface Expense {
+  id: string;
+  date: string; // YYYY-MM-DD
+  amount: number;
+  category: ExpenseCategory;
+  description: string | null;
+  /**
+   * Set together with `quantity` or not at all — enforced by
+   * scripts/045-expenses.sql's expenses_supply_bump_pairing CHECK, not just
+   * by the form. When both are present, creating/deleting this expense
+   * increments/decrements supplies.stock_quantity via the
+   * expense_stock_movements ledger (scripts/046, PR5).
+   */
+  supply_id: string | null;
+  quantity: number | null;
+  created_at: string;
+}
+
+// ============================================
 // FRONTEND TYPES - Para el wizard
 // ============================================
 
