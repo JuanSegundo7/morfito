@@ -56,4 +56,20 @@ describe("computeNetRevenue", () => {
     expect(result.commissionTotal).toBe(150);
     expect(result.netRevenue).toBe(700);
   });
+
+  it("2.16 (gastos-recurrentes PR2b): commission is never an operand, even once expensesTotal includes prorated recurring money", () => {
+    // expensesTotal folds one-off (300) and prorated recurring (100) money
+    // together BEFORE it ever reaches this function (design D6) — from
+    // computeNetRevenue's point of view they are indistinguishable, which is
+    // exactly the point: it must not need to know the money's origin.
+    const result = computeNetRevenue({
+      totalRevenue: 1000,
+      expensesTotal: 300 + 100 /* prorated */,
+      commissionTotalInformational: 150,
+    });
+
+    // 1000 - 400 = 600. Explicitly NOT 450 (which would be
+    // 1000 - 400 - 150, i.e. commission double-subtracted).
+    expect(result.netRevenue).toBe(600);
+  });
 });

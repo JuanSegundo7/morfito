@@ -134,61 +134,61 @@ task per module makes its RED set pass; REFACTOR cleans up without changing outc
 
 ### 2b — `lib/services/recurring-expenses.ts` (depends on 2a; independently shippable as PR2b)
 
-- [ ] 2.7 RED `[test,small]` Add to `lib/services/recurring-expenses.test.ts`: **cross-month proration
+- [x] 2.7 RED `[test,small]` Add to `lib/services/recurring-expenses.test.ts`: **cross-month proration
       (rule 2)** — monthly template `amount = 31000` active `2026-01-15..2026-02-15`: 17 January days
       at `31000/31 = 1000` (sum `17000`) + 15 February days at `31000/28 ≈ 1107.14` (sum `≈16607.14`),
       total `≈33607.14`. NOT `amount/days-in-period`, NOT a flat monthly figure applied to both months.
-- [ ] 2.8 RED `[test,small]` Add test case: **non-monthly templates contribute exactly zero,
+- [x] 2.8 RED `[test,small]` Add test case: **non-monthly templates contribute exactly zero,
       unconditionally, even with a non-null `amount` (rule 1)** — a `weekly` template AND a `biweekly`
       template, both with `amount` set, each produce `[]` from `expandRecurringExpensesDaily`. This is
       the regression guard against "simplifying" the unconditional skip into an `amount != null` check.
-- [ ] 2.9 RED `[test,small]` Add test case: **`sum(expandRecurringExpensesDaily(...)) ≈
+- [x] 2.9 RED `[test,small]` Add test case: **`sum(expandRecurringExpensesDaily(...)) ≈
       sum(expandRecurringExpenses(...))` within `1e-9` tolerance, asserted with a tolerance comparison,
       NEVER `toBe`** — a 31-day-month template's `amount/31` summed 31 times does not equal `amount`
       exactly under float arithmetic.
-- [ ] 2.10 RED `[test,small]` Add test case: **`end_date` inclusive + close-and-replace boundary (rule
+- [x] 2.10 RED `[test,small]` Add test case: **`end_date` inclusive + close-and-replace boundary (rule
       4)** — a template closed on the 15th contributes the 15th and NOT the 16th; separately, closing a
       template with `end_date = dayBefore(newStart)` and inserting a replacement with
       `start_date = newStart` charges the boundary day exactly once (not zero, not twice).
-- [ ] 2.11 RED `[test,small]` Add test case: a template entirely outside the requested period produces
+- [x] 2.11 RED `[test,small]` Add test case: a template entirely outside the requested period produces
       `[]` — no zero-amount rows, no category entry.
-- [ ] 2.12 RED `[test,small]` Add test case: `expandRecurringExpenses` groups **by `templateId`, never
+- [x] 2.12 RED `[test,small]` Add test case: `expandRecurringExpenses` groups **by `templateId`, never
       by description or category** — two templates sharing both description AND category produce TWO
       distinct rows.
-- [ ] 2.13 RED `[test,small]` Add test case: **payday window starting before the template's anchor is
+- [x] 2.13 RED `[test,small]` Add test case: **payday window starting before the template's anchor is
       clamped, never negative (edge case)** — template `start_date = 2026-08-05`, window
       `2026-08-01..2026-08-31`, `intervalDays = 7` → `["2026-08-05", "2026-08-12", "2026-08-19",
       "2026-08-26"]`, no date before the anchor, no negative `daysSinceAnchor`.
-- [ ] 2.14 RED `[test,small]` Add test case: **`paydayProgressFor` matches by `recurring_expense_id`
+- [x] 2.14 RED `[test,small]` Add test case: **`paydayProgressFor` matches by `recurring_expense_id`
       ONLY (rule 13, D5/D6)** — an expense with the correct FK but `category: "services"` (not
       `"salaries"`) counts; a separate expense with the SAME description but a different/null FK does
       NOT count. Both directions asserted in one test.
-- [ ] 2.15 RED `[test,small]` Add test case: `aggregatePaydayProgress` returns `null` (not `{loaded: 0,
+- [x] 2.15 RED `[test,small]` Add test case: `aggregatePaydayProgress` returns `null` (not `{loaded: 0,
       expected: 0}`) when zero informational templates exist — lets the caller distinguish "hide the
       counter" from "show 0 de 0".
-- [ ] 2.16 RED `[test,small]` Add to `lib/services/finance-summary.test.ts` (existing file, not new):
+- [x] 2.16 RED `[test,small]` Add to `lib/services/finance-summary.test.ts` (existing file, not new):
       **`computeNetRevenue` regression with prorated money folded into `expensesTotal` (rule 10,
       MANDATORY highest-stakes scenario)** — `totalRevenue: 1000`, `expensesTotal: 300 + 100
       /* prorated */ = 400`, `commissionTotalInformational: 150` → `netRevenue === 600`, explicitly NOT
       `450`. Proves commission is never an operand even once part of `expensesTotal` is recurring money.
-- [ ] 2.17 GREEN `[pure,large]` Implement `lib/services/recurring-expenses.ts` (D3 — two
+- [x] 2.17 GREEN `[pure,large]` Implement `lib/services/recurring-expenses.ts` (D3 — two
       banner-delimited sections: `// ─── Proration (monthly templates) ───` and
       `// ─── Payday tracking (weekly/biweekly templates) ───`) — `DailyRecurringAllocation`,
       `RecurringExpenseAllocation`, `expandRecurringExpensesDaily`, `expandRecurringExpenses`,
       `sumAllocations`, `PaydayProgress`, `isInformationalPaydayTemplate`, `previewPaydayDates`,
       `paydayProgressFor`, `aggregatePaydayProgress`. Imports `addDays`/`daysInMonth`/
       `formatCalendarDate`/`parseCalendarDate` from `lib/utils/calendar-date.ts`. Make 2.7–2.15 pass.
-- [ ] 2.18 GREEN `[test,small]` Confirm task 2.16's case passes against the EXISTING
+- [x] 2.18 GREEN `[test,small]` Confirm task 2.16's case passes against the EXISTING
       `computeNetRevenue` (`lib/services/finance-summary.ts` — unchanged by this PR, per the proposal's
       out-of-scope table). No new implementation; this is a regression proof, not a feature.
-- [ ] 2.19 REFACTOR `[pure,small]` Clean up naming and the section boundary without changing test
+- [x] 2.19 REFACTOR `[pure,small]` Clean up naming and the section boundary without changing test
       outcomes; re-run `npx vitest run` — confirm the FULL suite (calendar-date, recurring-expenses,
       finance-summary, recipe-cost) is green.
-- [ ] 2.20 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
+- [x] 2.20 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
 
 ### Automated tests — Phase 2
 
-- [ ] Test2.1 `npx vitest run` passes with all 4 `calendar-date.test.ts` cases (2.1–2.4), all 9
+- [x] Test2.1 `npx vitest run` passes with all 4 `calendar-date.test.ts` cases (2.1–2.4), all 9
       `recurring-expenses.test.ts` cases (2.7–2.15) and the `finance-summary.test.ts` regression case
       (2.16) green, alongside the pre-existing suite (`recipe-cost.test.ts`).
 
