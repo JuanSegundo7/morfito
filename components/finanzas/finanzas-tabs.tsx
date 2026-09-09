@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InsumosTab } from "@/components/finanzas/insumos-tab";
+import { RecetasTab } from "@/components/finanzas/recetas-tab";
 
 const FINANZAS_TABS = ["resumen", "gastos", "insumos", "recetas"] as const;
 type FinanzasTab = (typeof FINANZAS_TABS)[number];
@@ -23,8 +24,8 @@ function isFinanzasTab(value: string | null): value is FinanzasTab {
  * history. An unknown/absent `tab` value falls back to "resumen" instead of
  * crashing or rendering blank.
  *
- * Only the Insumos tab renders real content in this PR — Resumen/Gastos/
- * Recetas are placeholders that later PRs in this chain (PR2-PR6) replace.
+ * Insumos and Recetas render real content as of PR3 — Resumen/Gastos are
+ * still placeholders that later PRs in this chain (PR4-PR6) replace.
  */
 export function FinanzasTabs() {
   const router = useRouter();
@@ -62,8 +63,8 @@ export function FinanzasTabs() {
         <InsumosTab />
       </TabsContent>
 
-      <TabsContent value="recetas" className="flex-1 overflow-auto p-6">
-        <PlaceholderPane />
+      <TabsContent value="recetas" className="flex flex-1 flex-col overflow-hidden">
+        <RecetasTab />
       </TabsContent>
     </Tabs>
   );

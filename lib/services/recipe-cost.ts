@@ -3,8 +3,8 @@ import type { ProductSupplyWithSupply } from "@/lib/types";
 /**
  * Cost/stock/finance porting, PR1. Pure functions only — no supabase/react
  * imports, deliberately, so this can be unit-tested in isolation and reused
- * from any consuming component via useMemo (see components/precios/
- * recipe-editor.tsx and app/(dashboard)/precios/page.tsx). This is also the
+ * from any consuming component via useMemo (see components/finanzas/
+ * recipe-editor.tsx and components/finanzas/recetas-tab.tsx). This is also the
  * ONLY place cost/margin are computed — per the architectural invariant
  * documented in lib/hooks/supplies/use-product-supplies.ts, cost/margin are
  * NEVER their own cached query; they are always derived here, on demand,
