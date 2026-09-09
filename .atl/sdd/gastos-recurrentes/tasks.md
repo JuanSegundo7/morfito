@@ -333,35 +333,35 @@ for the optional 4a/4b split)
 
 ## Phase 5 (PR5, depends on PR1, PR2, PR4): "Cargar pago" + payday counter (~240 lines)
 
-- [ ] 5.1 `[UI,medium]` Modify `components/finanzas/expense-form-dialog.tsx` — add `prefill?:
+- [x] 5.1 `[UI,medium]` Modify `components/finanzas/expense-form-dialog.tsx` — add `prefill?:
       ExpenseFormPrefill | null` prop (`{ category, description, recurringExpenseId }`); extend the
       on-open reset effect at `:88-96` to seed `date = arTodayStr()`, `amount = ""` (**never
       prefilled** — the real payment amount is not knowable in advance, rule 1), `category =
       prefill?.category ?? "supplies"`, `description = prefill?.description ?? ""`,
       `recurringExpenseId = prefill?.recurringExpenseId ?? null`, with `prefill` added to the effect's
       dependency array. *(design D8 — extends the reset, does not compete with it via a second effect)*
-- [ ] 5.2 `[dep,small]` **`prefill` MUST be referentially stable at every call site.** Because `prefill`
+- [x] 5.2 `[dep,small]` **`prefill` MUST be referentially stable at every call site.** Because `prefill`
       is in the effect's dep array, an inline object literal (`prefill={{ category, description,
       recurringExpenseId }}`) produces a new reference on every parent render and **re-runs the reset
       while the operator is typing the amount**, silently wiping it. The caller (task 5.5) holds it in
       `useState`, never constructs it inline in JSX. *(design D8 — the single most likely PR5
       regression; called out as its own task per the launch instructions, not left implicit)*
-- [ ] 5.3 `[UI,small]` Modify `expense-form-dialog.tsx` — **delete the local `todayArStr` (`:32-34`)**;
+- [x] 5.3 `[UI,small]` Modify `expense-form-dialog.tsx` — **delete the local `todayArStr` (`:32-34`)**;
       import `arTodayStr` from `@/lib/utils/calendar-date` instead. Makes rule 12's "same AR-calendar
       source the expense dialog already uses" literally true, not merely parallel.
-- [ ] 5.4 `[hook,small]` Modify `lib/hooks/expenses/use-expenses.ts` — add `recurring_expense_id: string
+- [x] 5.4 `[hook,small]` Modify `lib/hooks/expenses/use-expenses.ts` — add `recurring_expense_id: string
       | null` to `useCreateExpense`'s mutation input (`:99-106`), passed straight to the INSERT. Nothing
       else changes — `invalidateExpenseQueries` already invalidates `["orders-analytics"]`, which is
       what the counter and totals need.
-- [ ] 5.5 `[UI,medium]` Modify `components/finanzas/recurring-expense-list.tsx` — add a "Cargar pago"
+- [x] 5.5 `[UI,medium]` Modify `components/finanzas/recurring-expense-list.tsx` — add a "Cargar pago"
       button on informational (`weekly`/`biweekly`) templates + an "N de M pagos cargados" line from
       `paydayProgressFor`, fed by the sub-tab's shared `useExpenses(start, end)`. *(spec: payday-tracking
       — counter reads from the FK, unaffected by description renames)*
-- [ ] 5.6 `[UI,medium]` Modify `components/finanzas/gastos-tab.tsx` — hold `prefill` in `useState`
+- [x] 5.6 `[UI,medium]` Modify `components/finanzas/gastos-tab.tsx` — hold `prefill` in `useState`
       (stable reference per task 5.2); the "Cargar pago" click handler calls `setPrefill({ category,
       description, recurringExpenseId })` then opens the dialog; `onCreated` switches to the "Del
       período" sub-tab so the saved payment is visible where it landed; clear `prefill` on dialog close.
-- [ ] 5.7 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY. Watch `react-hooks/exhaustive-deps` on the
+- [x] 5.7 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY. Watch `react-hooks/exhaustive-deps` on the
       D8 effect specifically (task 5.1's dep array).
 
 ### Manual QA — Phase 5

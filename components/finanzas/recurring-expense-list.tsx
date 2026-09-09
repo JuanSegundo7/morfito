@@ -14,14 +14,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Receipt, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/format";
 import { arTodayStr, parseCalendarDate } from "@/lib/utils/calendar-date";
-import { expandRecurringExpenses, previewPaydayDates } from "@/lib/services/recurring-expenses";
+import {
+  expandRecurringExpenses,
+  paydayProgressFor,
+  previewPaydayDates,
+} from "@/lib/services/recurring-expenses";
 import { useDeleteRecurringExpense } from "@/lib/hooks/expenses/use-recurring-expenses";
 import { RecurringExpenseUpdateDialog } from "@/components/finanzas/recurring-expense-update-dialog";
 import { EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
-import type { RecurringExpense, RecurringExpenseFrequency } from "@/lib/types";
+import type { Expense, RecurringExpense, RecurringExpenseFrequency } from "@/lib/types";
 
 /**
  * gastos-recurrentes PR4a. Canonical frequency label map — mirrors
@@ -66,6 +70,21 @@ interface RecurringExpenseListProps {
    *  period only. */
   periodStart: string;
   periodEnd: string;
+  /**
+   * gastos-recurrentes PR5. The SAME `useExpenses(start, end)` result the
+   * "Del período" sub-tab already fetches — passed down rather than
+   * re-queried here, so the payday counter never triggers a second fetch of
+   * the same range. Feeds `paydayProgressFor`, which matches by
+   * `recurring_expense_id` only (rule 13) — never by description or
+   * category.
+   */
+  expenses: Expense[] | undefined;
+  /**
+   * gastos-recurrentes PR5. "Cargar pago" click handler for an informational
+   * (weekly/biweekly) template — the parent (gastos-tab.tsx) owns the
+   * prefill state and opens ExpenseFormDialog with it (design D8).
+   */
+  onLoadPayment: (template: RecurringExpense) => void;
 }
 
 /**
@@ -84,12 +103,20 @@ interface RecurringExpenseListProps {
  * place (D3 of the proposal), and weekly/biweekly templates carry no amount
  * to change in the first place. Opens RecurringExpenseUpdateDialog, which
  * drives useCloseAndReplaceRecurringExpense (design D9/D10).
+ *
+ * PR5: informational (weekly/biweekly) rows get a "Cargar pago" button
+ * (delegates to the parent's `onLoadPayment`, which opens ExpenseFormDialog
+ * prefilled per design D8) and an "N de M pagos cargados" line from
+ * `paydayProgressFor`, fed by the sub-tab's already-fetched
+ * `useExpenses(start, end)` — no second fetch here.
  */
 export function RecurringExpenseList({
   templates,
   isLoading,
   periodStart,
   periodEnd,
+  expenses,
+  onLoadPayment,
 }: RecurringExpenseListProps) {
   const deleteTemplate = useDeleteRecurringExpense();
   const [deletingTemplate, setDeletingTemplate] = useState<RecurringExpense | null>(null);
@@ -189,6 +216,17 @@ export function RecurringExpenseList({
                     <Pencil className="h-4 w-4" />
                   </Button>
                 )}
+                {!isMonthly && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => onLoadPayment(template)}
+                  >
+                    <Receipt className="mr-1.5 h-3.5 w-3.5" />
+                    Cargar pago
+                  </Button>
+                )}
                 {canDelete && (
                   <Button
                     size="icon-sm"
@@ -206,6 +244,24 @@ export function RecurringExpenseList({
                 <span>·</span>
                 <span className="tabular-nums">{secondaryLine}</span>
               </div>
+              {!isMonthly &&
+                (() => {
+                  // Rule 13: matches expenses by recurring_expense_id ONLY
+                  // (paydayProgressFor's own contract) — never by
+                  // description or category, so renaming the template or a
+                  // non-"salaries" category never breaks the count.
+                  const progress = paydayProgressFor(
+                    template,
+                    expenses,
+                    periodStartCal,
+                    periodEndCal,
+                  );
+                  return (
+                    <span className="text-caption text-muted-foreground tabular-nums">
+                      {progress.loaded} de {progress.expected} pagos cargados
+                    </span>
+                  );
+                })()}
             </div>
           );
         })}

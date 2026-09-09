@@ -25,19 +25,30 @@ import { CalendarIcon } from "lucide-react";
 import { useSupplies } from "@/lib/hooks/supplies/use-supplies";
 import { useCreateExpense, type CreateExpenseResult } from "@/lib/hooks/expenses/use-expenses";
 import { EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
+import { arTodayStr } from "@/lib/utils/calendar-date";
 import type { ExpenseCategory } from "@/lib/types";
 
 const TZ = "America/Argentina/Buenos_Aires";
-
-function todayArStr(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: TZ });
-}
 
 const CATEGORY_OPTIONS: { value: ExpenseCategory; label: string }[] = (
   Object.entries(EXPENSE_CATEGORY_LABELS) as [ExpenseCategory, string][]
 ).map(([value, label]) => ({ value, label }));
 
 const NO_SUPPLY = "__none__";
+
+/**
+ * gastos-recurrentes PR5. What "Cargar pago" hands to the dialog when it
+ * opens it from an informational (weekly/biweekly) template: the template's
+ * own category/description, and the FK the resulting expense row must carry
+ * so the "N de M pagos cargados" counter can find it (rule 13 — FK match
+ * only, never text). Deliberately has no `amount` field — rule 1: the real
+ * payment amount is never knowable in advance, so it is never prefilled.
+ */
+export interface ExpenseFormPrefill {
+  category: ExpenseCategory;
+  description: string;
+  recurringExpenseId: string;
+}
 
 interface ExpenseFormDialogProps {
   open: boolean;
@@ -51,6 +62,20 @@ interface ExpenseFormDialogProps {
    * inside useCreateExpense is immediate feedback, this is the persistent
    * one. */
   onCreated?: (result: CreateExpenseResult) => void;
+  /**
+   * gastos-recurrentes PR5 (design D8). Seeds category/description/FK when
+   * "Cargar pago" opens this dialog from an informational template; `null`/
+   * `undefined` for a plain "Nuevo gasto" open.
+   *
+   * MUST be referentially stable across renders of the caller. It sits in
+   * this component's reset-on-open effect's dependency array (below), so an
+   * inline object literal at the call site (`prefill={{ category, ... }}`)
+   * gets a new reference on every render of the PARENT and re-runs the reset
+   * while the operator is mid-keystroke on the amount field — silently
+   * wiping what they just typed. The caller must hold this in `useState`,
+   * never construct it inline in JSX.
+   */
+  prefill?: ExpenseFormPrefill | null;
 }
 
 /**
@@ -73,27 +98,38 @@ export function ExpenseFormDialog({
   startDate,
   endDate,
   onCreated,
+  prefill,
 }: ExpenseFormDialogProps) {
   const { data: supplies } = useSupplies();
   const createExpense = useCreateExpense(startDate, endDate);
 
-  const [date, setDate] = useState(todayArStr());
+  const [date, setDate] = useState(arTodayStr());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>("supplies");
   const [description, setDescription] = useState("");
   const [supplyId, setSupplyId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState("");
+  const [recurringExpenseId, setRecurringExpenseId] = useState<string | null>(null);
 
+  // gastos-recurrentes PR5 (design D8): extends this SAME reset-on-open
+  // effect instead of a second, competing one — a second effect racing this
+  // one on overlapping deps is exactly the "silently wiped" failure the
+  // design flags. `amount` is NEVER seeded from `prefill` (rule 1 — a
+  // weekly/biweekly template's real payment amount isn't knowable in
+  // advance, that's the whole reason the template is informational-only).
+  // `prefill` is in the dep array on purpose; see the prop's JSDoc above for
+  // why the caller MUST keep it referentially stable.
   useEffect(() => {
     if (!open) return;
-    setDate(todayArStr());
+    setDate(arTodayStr());
     setAmount("");
-    setCategory("supplies");
-    setDescription("");
+    setCategory(prefill?.category ?? "supplies");
+    setDescription(prefill?.description ?? "");
     setSupplyId(null);
     setQuantity("");
-  }, [open]);
+    setRecurringExpenseId(prefill?.recurringExpenseId ?? null);
+  }, [open, prefill]);
 
   function formatDisplayDate(dateStr: string): string {
     return new Date(dateStr + "T12:00:00").toLocaleDateString("es-AR", {
@@ -130,6 +166,7 @@ export function ExpenseFormDialog({
         description: description.trim() || null,
         supply_id: supplyId,
         quantity: supplyId ? parsedQuantity : null,
+        recurring_expense_id: recurringExpenseId,
       });
       onCreated?.(result);
       handleClose();

@@ -103,6 +103,12 @@ export function useCreateExpense(startDate: string, endDate: string) {
       description: string | null;
       supply_id: string | null;
       quantity: number | null;
+      // gastos-recurrentes PR5. Set only by the "Cargar pago" flow off an
+      // informational (weekly/biweekly) template — passed straight to the
+      // INSERT, no extra branching needed here. invalidateExpenseQueries
+      // already invalidates ["orders-analytics"], which is what the
+      // "N de M pagos cargados" counter and the category totals need.
+      recurring_expense_id: string | null;
     }): Promise<CreateExpenseResult> => {
       const { data, error } = await supabase
         .from("expenses")

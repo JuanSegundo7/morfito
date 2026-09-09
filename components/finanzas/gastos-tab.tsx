@@ -19,11 +19,11 @@ import { useExpenses, useDeleteExpense } from "@/lib/hooks/expenses/use-expenses
 import { useOrdersAnalytics } from "@/lib/hooks/orders/use-orders-history";
 import { useRecurringExpenses } from "@/lib/hooks/expenses/use-recurring-expenses";
 import { ExpenseList, EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
-import { ExpenseFormDialog } from "@/components/finanzas/expense-form-dialog";
+import { ExpenseFormDialog, type ExpenseFormPrefill } from "@/components/finanzas/expense-form-dialog";
 import { RecurringExpenseList } from "@/components/finanzas/recurring-expense-list";
 import { RecurringExpenseFormDialog } from "@/components/finanzas/recurring-expense-form-dialog";
 import { formatCurrency } from "@/lib/utils/format";
-import type { Expense, ExpenseCategory } from "@/lib/types";
+import type { Expense, ExpenseCategory, RecurringExpense } from "@/lib/types";
 import type { CreateExpenseResult } from "@/lib/hooks/expenses/use-expenses";
 
 const GASTOS_SUB_TABS = ["periodo", "fijos"] as const;
@@ -84,6 +84,14 @@ function monthRange(date: Date): { start: string; end: string; label: string } {
  * for the same month "Del período" is showing. This is an internal
  * useState, NOT synced to finanzas-tabs.tsx's `?tab=` — the top-level tab
  * union stays a 4-value union, this is not a 5th top-level tab.
+ *
+ * gastos-recurrentes PR5: `prefill` (design D8) lives in `useState` here —
+ * NEVER built as an inline object literal at ExpenseFormDialog's call site
+ * below, because that prop sits in the dialog's reset-on-open effect deps
+ * and an inline literal would re-run that reset (wiping a typed amount) on
+ * every render of THIS component. The "Cargar pago" handler sets it and
+ * opens the dialog; a successful save switches back to "Del período" so the
+ * new payment is visible where it landed; closing the dialog clears it.
  */
 export function GastosTab() {
   const [anchorDate, setAnchorDate] = useState(() => new Date());
@@ -107,6 +115,10 @@ export function GastosTab() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [bumpFailedBanner, setBumpFailedBanner] = useState<string | null>(null);
+  // gastos-recurrentes PR5 (design D8) — see this component's doc comment
+  // above for why this MUST be state, never an inline literal at the
+  // ExpenseFormDialog call site below.
+  const [prefill, setPrefill] = useState<ExpenseFormPrefill | null>(null);
 
   const handleExpenseCreated = (result: CreateExpenseResult) => {
     if (result.stockBumpFailed) {
@@ -114,6 +126,24 @@ export function GastosTab() {
         "El gasto se guardó, pero no se pudo actualizar el stock. Ajustalo manualmente en la pestaña Insumos.",
       );
     }
+    // The payment just saved is only visible in "Del período" — switch there
+    // so it lands where the operator can see it, regardless of which
+    // sub-tab "Cargar pago" was opened from.
+    setSubTab("periodo");
+  };
+
+  const handleLoadPayment = (template: RecurringExpense) => {
+    setPrefill({
+      category: template.category,
+      description: template.description,
+      recurringExpenseId: template.id,
+    });
+    setFormOpen(true);
+  };
+
+  const handleFormOpenChange = (nextOpen: boolean) => {
+    setFormOpen(nextOpen);
+    if (!nextOpen) setPrefill(null);
   };
 
   const handlePrev = () =>
@@ -229,6 +259,8 @@ export function GastosTab() {
                   isLoading={isRecurringLoading}
                   periodStart={start}
                   periodEnd={end}
+                  expenses={expenses}
+                  onLoadPayment={handleLoadPayment}
                 />
               </CardContent>
             </Card>
@@ -238,10 +270,11 @@ export function GastosTab() {
 
       <ExpenseFormDialog
         open={formOpen}
-        onOpenChange={setFormOpen}
+        onOpenChange={handleFormOpenChange}
         startDate={start}
         endDate={end}
         onCreated={handleExpenseCreated}
+        prefill={prefill}
       />
 
       <RecurringExpenseFormDialog open={recurringFormOpen} onOpenChange={setRecurringFormOpen} />
