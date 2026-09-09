@@ -276,7 +276,7 @@ for the optional 4a/4b split)
       mutation throws before issuing the DELETE unless `template.start_date >= arTodayStr()`. Boundary
       is `>=` — a template starting today is still deletable.** This is the second layer; the UI omits
       the button entirely as the primary guard (task 4.4).
-- [ ] 4.3 `[hook,medium]` Add `useCloseAndReplaceRecurringExpense()` to `use-recurring-expenses.ts` —
+- [x] 4.3 `[hook,medium]` Add `useCloseAndReplaceRecurringExpense()` to `use-recurring-expenses.ts` —
       **D9: INSERT the replacement row FIRST (`start_date = effectiveFrom`, new `amount`), then UPDATE
       the old row's `end_date = dayBefore(effectiveFrom)` SECOND.** Doc comment carries the
       visible-vs-invisible-failure table verbatim (UPDATE-then-INSERT crash ⇒ cost silently
@@ -297,7 +297,7 @@ for the optional 4a/4b split)
       field rendered **only when `frequency === "monthly"`**, required in that case (rule 11, mirroring
       the DB CHECK client-side); start date. *(spec: recurring-expense-templates — weekly template
       creatable for any category; amount field absent for weekly/biweekly)*
-- [ ] 4.6 `[UI,medium]` Create `components/finanzas/recurring-expense-update-dialog.tsx` — new amount +
+- [x] 4.6 `[UI,medium]` Create `components/finanzas/recurring-expense-update-dialog.tsx` — new amount +
       effective-from date. **Date picker bounded to `effectiveFrom > template.start_date` (D10)** — the
       `recurring_expenses_period_order` CHECK rejects `end_date < start_date`, and
       `effectiveFrom === start_date` computes exactly that, so the UI must not be able to request it.

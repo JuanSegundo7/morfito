@@ -14,11 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/format";
 import { arTodayStr, parseCalendarDate } from "@/lib/utils/calendar-date";
 import { expandRecurringExpenses, previewPaydayDates } from "@/lib/services/recurring-expenses";
 import { useDeleteRecurringExpense } from "@/lib/hooks/expenses/use-recurring-expenses";
+import { RecurringExpenseUpdateDialog } from "@/components/finanzas/recurring-expense-update-dialog";
 import { EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
 import type { RecurringExpense, RecurringExpenseFrequency } from "@/lib/types";
 
@@ -68,7 +69,7 @@ interface RecurringExpenseListProps {
 }
 
 /**
- * gastos-recurrentes PR4a. One row per template: description, category
+ * gastos-recurrentes PR4a/PR4b. One row per template: description, category
  * badge, frequency badge, Activo/"Cerrado el {end_date}" badge, "Desde
  * {start_date}", and either the monthly amount + this period's prorated
  * share, or the weekly/biweekly cadence preview (D1 — payday dates, not an
@@ -77,6 +78,12 @@ interface RecurringExpenseListProps {
  * Delete button is rendered ONLY when `start_date >= arTodayStr()` —
  * absent, never a disabled button with a tooltip (D4, D2 of design.md: the
  * mutation itself is the second layer, this omission is the primary one).
+ *
+ * PR4b: "Actualizar" is rendered ONLY on `monthly` templates that are still
+ * Activo (`end_date === null`) — a template's amount is never UPDATEd in
+ * place (D3 of the proposal), and weekly/biweekly templates carry no amount
+ * to change in the first place. Opens RecurringExpenseUpdateDialog, which
+ * drives useCloseAndReplaceRecurringExpense (design D9/D10).
  */
 export function RecurringExpenseList({
   templates,
@@ -86,6 +93,7 @@ export function RecurringExpenseList({
 }: RecurringExpenseListProps) {
   const deleteTemplate = useDeleteRecurringExpense();
   const [deletingTemplate, setDeletingTemplate] = useState<RecurringExpense | null>(null);
+  const [updatingTemplate, setUpdatingTemplate] = useState<RecurringExpense | null>(null);
 
   const periodStartCal = useMemo(() => parseCalendarDate(periodStart), [periodStart]);
   const periodEndCal = useMemo(() => parseCalendarDate(periodEnd), [periodEnd]);
@@ -171,6 +179,16 @@ export function RecurringExpenseList({
                 <span className="flex-1 text-subheadline font-medium truncate">
                   {template.description}
                 </span>
+                {isMonthly && !template.end_date && (
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground shrink-0"
+                    onClick={() => setUpdatingTemplate(template)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
                 {canDelete && (
                   <Button
                     size="icon-sm"
@@ -192,6 +210,12 @@ export function RecurringExpenseList({
           );
         })}
       </div>
+
+      <RecurringExpenseUpdateDialog
+        open={!!updatingTemplate}
+        onOpenChange={(o) => !o && setUpdatingTemplate(null)}
+        template={updatingTemplate}
+      />
 
       <AlertDialog open={!!deletingTemplate} onOpenChange={(o) => !o && setDeletingTemplate(null)}>
         <AlertDialogContent className="ios-glass rounded-2xl">
