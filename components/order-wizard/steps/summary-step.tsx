@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { SelectedSide } from "../hooks/use-side-selection";
 import type { SelectedSushiItem } from "@/lib/types/sushi-types";
 import { getOrderSources, type OrderSourceConfig } from "@/lib/utils/commission";
+import { useHasService } from "@/components/providers/services-provider";
 import {
   Select,
   SelectContent,
@@ -184,7 +185,11 @@ export function SummaryStep({
     setOrderSources(getOrderSources());
   }, []);
 
-  const hasSourceOptions = orderSources.length > 0;
+  // Gateado por plan: sin el servicio order_source_commission activo, la
+  // card de canal de venta no se muestra aunque haya canales configurados
+  // en localStorage (ver services-provider.tsx).
+  const hasOrderSourceService = useHasService("order_source_commission");
+  const hasSourceOptions = hasOrderSourceService && orderSources.length > 0;
   // Channel-aware gating: the commission section only makes sense to show
   // when a source is actually selected AND that source carries a nonzero
   // commission — never a legitimate negative value, so the same simple

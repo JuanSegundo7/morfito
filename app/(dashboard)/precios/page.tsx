@@ -18,6 +18,7 @@ import { RecipeEditor } from "@/components/precios/recipe-editor";
 import { formatCurrency } from "@/lib/utils/format";
 import type { ExtraCategory, ProductSupplyWithSupply, Supply } from "@/lib/types";
 import { useVertical } from "@/components/providers/vertical-provider";
+import { useHasService } from "@/components/providers/services-provider";
 import {
   getOrderSources,
   saveOrderSources,
@@ -99,6 +100,12 @@ function BurgerVariantsPreview({ productId }: { productId: string }) {
 
 export default function PricingPage() {
   const vertical = useVertical();
+  // Gateado por plan: el editor de canales/comisiones no tiene sentido si
+  // el proyecto no contrato order_source_commission (ver
+  // services-provider.tsx) -- ocultarlo tambien acá, no solo en el wizard/
+  // rendimiento, evita que un admin configure canales para una feature que
+  // no tiene.
+  const hasOrderSourceService = useHasService("order_source_commission");
   const { data: burgers, isLoading: burgersLoading } = useProducts();
   const { data: extras, isLoading: extrasLoading } = useAddonProducts();
   const updateBurger = useUpdateProduct();
@@ -334,7 +341,9 @@ export default function PricingPage() {
             jebbs-dashboard@42eecdb -- la logica de negocio (multi-canal,
             editable) diverge demasiado de lo que jebbs tenia en ese punto
             (un solo canal hardcodeado) como para mezclar con seguridad.
-            Migrar text-xs -> text-caption aca en una pasada dedicada aparte. */}
+            Migrar text-xs -> text-caption aca en una pasada dedicada aparte.
+            Gateado por plan: ver hasOrderSourceService arriba. */}
+        {hasOrderSourceService && (
         <Card className="bg-card">
           <CardHeader>
             <CardTitle>Canales de venta y comisiones</CardTitle>
@@ -441,6 +450,7 @@ export default function PricingPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         <Tabs defaultValue="burgers">
           <TabsList className="mb-6">

@@ -41,6 +41,7 @@ import { formatCurrency } from "@/lib/utils/format";
 import { ExternalIncomePanel } from "@/components/analytics/external-income-panel";
 import { useVertical } from "@/components/providers/vertical-provider";
 import { getOrderSources } from "@/lib/utils/commission";
+import { useHasService } from "@/components/providers/services-provider";
 import {
   ChartContainer,
   ChartTooltip,
@@ -140,6 +141,10 @@ const RANK_CONFIG = [
 
 export default function AnalyticsPage() {
   const vertical = useVertical();
+  // Gateado por plan: la card "Ingresos por canal" solo tiene sentido si
+  // el proyecto contrato el servicio order_source_commission (ver
+  // services-provider.tsx).
+  const hasOrderSourceService = useHasService("order_source_commission");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | undefined>(undefined);
@@ -457,10 +462,11 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Revenue by source — cost/stock/finance porting, PR3. Mirrors the
+        {/* Revenue by source — cost/stock/finance porting, PR3. Mirrors la
             "Unidades vendidas" card's structure/styling above (loading
             skeleton, empty state, list-of-buckets layout) for visual
-            consistency. */}
+            consistency. Gateada por plan: ver hasOrderSourceService arriba. */}
+        {hasOrderSourceService && (
         <Card className="mt-4 ios-glass bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
@@ -514,6 +520,7 @@ export default function AnalyticsPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Charts */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">

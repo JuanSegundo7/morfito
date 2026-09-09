@@ -11,6 +11,7 @@ import { BillingBlock } from "@/components/billing/billing-block";
 import { getEntitlements } from "@/lib/entitlements";
 import { resolveVertical } from "@/lib/verticals";
 import { VerticalProvider } from "@/components/providers/vertical-provider";
+import { ServicesProvider } from "@/components/providers/services-provider";
 
 export default async function DashboardLayout({
   children,
@@ -44,6 +45,7 @@ export default async function DashboardLayout({
   return (
     <ThemeProvider>
       <QueryProvider>
+        <ServicesProvider activeServiceKeys={activeServiceKeys}>
         <VerticalProvider vertical={vertical}>
           {isBlocked && entitlements.status === "known" ? (
             <BillingBlock
@@ -87,6 +89,7 @@ export default async function DashboardLayout({
           />
           <Analytics />
         </VerticalProvider>
+        </ServicesProvider>
       </QueryProvider>
     </ThemeProvider>
   );
