@@ -143,54 +143,54 @@ Strict TDD applies to this entire phase — this is the repo's **fourth pure mod
 this change lives." RED tasks are failing-test additions; one GREEN task makes the full RED set pass;
 REFACTOR cleans up without changing outcomes.
 
-- [ ] 2.1 RED `[test,small]` Add to `lib/services/daily-ledger.test.ts`: **row order within a day (rule 2)** —
+- [x] 2.1 RED `[test,small]` Add to `lib/services/daily-ledger.test.ts`: **row order within a day (rule 2)** —
       one day carrying all four sources (Ventas, Ingresos externos, one-off expense, prorated recurring) ⇒
       `entries.map(e => e.source)` is exactly `["orders", "external_income", "expense", "recurring"]`.
-- [ ] 2.2 RED `[test,small]` Add test case: **input-order independence (design D7, the regression guard for
+- [x] 2.2 RED `[test,small]` Add test case: **input-order independence (design D7, the regression guard for
       the whole decision)** — shuffle the `expenses` array and reverse the `recurringAllocations` array
       (mimicking template-major output from an unordered select) ⇒ output is **byte-identical**, including
       every intermediate `balance`, across both input orderings.
-- [ ] 2.3 RED `[test,small]` Add test case: **Ventas and Ingresos externos never merge** — a day with both
+- [x] 2.3 RED `[test,small]` Add test case: **Ventas and Ingresos externos never merge** — a day with both
       non-zero ⇒ two separate rows, `source: "orders"` and `source: "external_income"`, each keeping its own
       amount apart from the other.
-- [ ] 2.4 RED `[test,small]` Add test case: **zero-amount rows are excluded (rule 4)** — a day with no sales
+- [x] 2.4 RED `[test,small]` Add test case: **zero-amount rows are excluded (rule 4)** — a day with no sales
       produces no `"orders"` row; a recurring allocation with `amount === 0` produces no row; a one-off
       expense with `amount === 0` produces no row; an empty period produces `[]`.
-- [ ] 2.5 RED `[test,small]` Add test case: **one row per template per day, never collapsed (D1)** — three
+- [x] 2.5 RED `[test,small]` Add test case: **one row per template per day, never collapsed (D1)** — three
       active monthly templates over a 3-day period where all three charge every day ⇒ exactly **9**
       `"recurring"` rows total (3 per day), each carrying its own template's `concept`. Never a single
       lumped "Gastos fijos" row, never merged by day.
-- [ ] 2.6 RED `[test,small]` Add test case: **cross-month proration passes through unchanged** — allocations
+- [x] 2.6 RED `[test,small]` Add test case: **cross-month proration passes through unchanged** — allocations
       spanning January→February (`amount/31` then `amount/28`) reproduce both daily rates verbatim; the
       builder performs no division of its own.
-- [ ] 2.7 RED `[test,small]` Add test case: **weekly/biweekly templates contribute zero rows** — a stale-amount
+- [x] 2.7 RED `[test,small]` Add test case: **weekly/biweekly templates contribute zero rows** — a stale-amount
       `weekly` template in the input `recurringAllocations`/templates produces no `"recurring"` row anywhere
       in the output (consistent with `expandRecurringExpensesDaily`'s existing unconditional skip).
-- [ ] 2.8 RED `[test,small]` Add test case: **no commission row exists, ever, even when `commissionTotal` is
+- [x] 2.8 RED `[test,small]` Add test case: **no commission row exists, ever, even when `commissionTotal` is
       non-zero (D1 / rule 9, MANDATORY highest-stakes scenario)** — with a non-zero `commissionTotal` present
       in the fixture, assert `sum(income) − sum(expense) ≈ netRevenue` within `1e-9` tolerance, **never
       `toBe`**. Fails loudly if a commission row or field is ever added to `LedgerSource`.
-- [ ] 2.9 RED `[test,small]` Add test case: **the running balance's last value ≈ `netRevenue`, never re-summed
+- [x] 2.9 RED `[test,small]` Add test case: **the running balance's last value ≈ `netRevenue`, never re-summed
       for display (rule 1)** — with a 31-day-month template prorating `amount/31` for all 31 days, assert the
       last row's `balance` differs from `totalRevenue − expensesTotal` by at most `1e-9` (tolerance, because
       31 float additions of `amount/31` do not reproduce `amount` exactly — this is the exact drift D6 keeps
       off the screen).
-- [ ] 2.10 RED `[test,small]` Add test case: **`closingBalance` is never re-summed from the array** — assert
+- [x] 2.10 RED `[test,small]` Add test case: **`closingBalance` is never re-summed from the array** — assert
       no function under test in this file performs `entries.reduce(...)` (or an equivalent) to produce a
       displayed total; `buildDailyLedger`'s return type has no closing-balance field at all (there is no
       `ledgerClosingBalance` — design D6).
-- [ ] 2.11 RED `[test,small]` Add test case: **null description survives as null, no fallback text is baked
+- [x] 2.11 RED `[test,small]` Add test case: **null description survives as null, no fallback text is baked
       in by the builder (D2)** — a one-off expense with `description: null` produces a row with `concept ===
       null` **and** `category` set (never a Spanish fallback string like `"Gasto (Insumos)"` — that text is
       the component's job, not the builder's). Assert no Spanish string literal appears anywhere in this
       module's output for any fixture in the suite.
-- [ ] 2.12 RED `[test,small]` Add test case: **direction is derived, never stored** — `LEDGER_DIRECTION[entry
+- [x] 2.12 RED `[test,small]` Add test case: **direction is derived, never stored** — `LEDGER_DIRECTION[entry
       .source]` is `"expense"` for every `"expense"`/`"recurring"` row and `"income"` for `"orders"`/
       `"external_income"` rows; assert `LedgerEntry` objects carry no `kind` key and no `isProrated` key.
-- [ ] 2.13 RED `[test,small]` Add test case: **a day outside `dailyData`'s walked range is ignored, not
+- [x] 2.13 RED `[test,small]` Add test case: **a day outside `dailyData`'s walked range is ignored, not
       thrown** — an expense dated outside the period's `[startDateStr, endDateStr]` range produces no row and
       no exception (pins the documented, provably-unreachable-today behavior).
-- [ ] 2.14 GREEN `[pure,large]` Implement `lib/services/daily-ledger.ts` (design's *Interfaces / Contracts*
+- [x] 2.14 GREEN `[pure,large]` Implement `lib/services/daily-ledger.ts` (design's *Interfaces / Contracts*
       section, verbatim signatures) — `LedgerSource` (`"orders" | "external_income" | "expense" |
       "recurring"`, no commission member), `LEDGER_DIRECTION` (object literal, not `Object.fromEntries` —
       TS checks all 4 keys against the union at this exact line), `LedgerEntry` (`date`, `source`, `concept:
@@ -204,35 +204,35 @@ REFACTOR cleans up without changing outcomes.
       `templateId`; plain code-unit comparison, never `localeCompare`). Zero React/supabase/`components/`
       imports — same posture as `finance-summary.ts`, `recipe-cost.ts`, `recurring-expenses.ts`. Make
       2.1–2.13 pass.
-- [ ] 2.15 REFACTOR `[pure,small]` Clean up naming/structure without changing test outcomes; re-run `npx
+- [x] 2.15 REFACTOR `[pure,small]` Clean up naming/structure without changing test outcomes; re-run `npx
       vitest run` — confirm the FULL suite (calendar-date, recurring-expenses, finance-summary, recipe-cost,
       **daily-ledger**) is green.
-- [ ] 2.16 `[hook,small]` Modify `use-orders-history.ts` — add the import `import { buildDailyLedger } from
+- [x] 2.16 `[hook,small]` Modify `use-orders-history.ts` — add the import `import { buildDailyLedger } from
       "@/lib/services/daily-ledger";` beside the existing `recurring-expenses` import (`:8`).
-- [ ] 2.17 `[hook,medium]` Modify `use-orders-history.ts` — insert the `buildDailyLedger` call after the
+- [x] 2.17 `[hook,medium]` Modify `use-orders-history.ts` — insert the `buildDailyLedger` call after the
       gap-fill loop closes (`:385`) and before the return (`:387`): pass `dailyData`, the mapped current-period
       `expenses` (coercing `amount` with `Number()`, `category` as `ExpenseCategory`, `description ?? null`),
       and the **same** `recurringAllocations` array already computed once at `:249` — **no fourth call to
       `expandRecurringExpensesDaily`**. Carry the comment verbatim: this is a projection of data already in
       hand, not a fourth aggregation. *(spec: daily-ledger — `recurringAllocations` consumed, never
       recomputed; rule 7)*
-- [ ] 2.18 `[hook,small]` Modify `use-orders-history.ts`'s return object (`:387-410`) — add `ledger,` beside
+- [x] 2.18 `[hook,small]` Modify `use-orders-history.ts`'s return object (`:387-410`) — add `ledger,` beside
       `expensesByCategory` (`:404`). **No `ledgerClosingBalance` field is added — design D6.** No other
       returned value changes; `computeNetRevenue`'s call site (`:285-289`) stays byte-identical.
-- [ ] 2.19 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
+- [x] 2.19 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
 
 ### Automated tests — Phase 2
 
-- [ ] Test2.1 `npx vitest run` passes with all 13 `daily-ledger.test.ts` cases (2.1–2.13) green, alongside the
+- [x] Test2.1 `npx vitest run` passes with all 13 `daily-ledger.test.ts` cases (2.1–2.13) green, alongside the
       pre-existing suite (`calendar-date.test.ts`, `recurring-expenses.test.ts`, `finance-summary.test.ts`,
       `recipe-cost.test.ts`) — none regressed by the new import/wiring.
 
 ### Manual QA — Phase 2
 
-- [ ] QA2.1 Confirm `expandRecurringExpensesDaily` is still called exactly **twice** per
+- [x] QA2.1 Confirm `expandRecurringExpensesDaily` is still called exactly **twice** per
       `useOrdersAnalytics` invocation (current period + previous period) after adding the ledger — grep the
       call sites, count them. *(spec: revenue-analytics — the ledger adds no third current-period call)*
-- [ ] QA2.2 Confirm `lib/services/daily-ledger.ts` imports nothing from `components/`, nothing from
+- [x] QA2.2 Confirm `lib/services/daily-ledger.ts` imports nothing from `components/`, nothing from
       `lib/hooks/`, and no React/supabase symbol — matches `finance-summary.ts`/`recipe-cost.ts`/
       `recurring-expenses.ts`'s posture.
 

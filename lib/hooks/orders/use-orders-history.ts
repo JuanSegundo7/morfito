@@ -6,6 +6,7 @@ import type { ExpenseCategory, Order, RecurringExpense } from "@/lib/types";
 import { computeNetRevenue } from "@/lib/services/finance-summary";
 import { parseCalendarDate } from "@/lib/utils/calendar-date";
 import { expandRecurringExpensesDaily, sumAllocations } from "@/lib/services/recurring-expenses";
+import { buildDailyLedger } from "@/lib/services/daily-ledger";
 
 const TZ = "America/Argentina/Buenos_Aires";
 
@@ -427,6 +428,24 @@ export function useOrdersAnalytics(
         cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
 
+      // libro-diario PR2 — a PROJECTION of data already in hand, not a
+      // fourth aggregation: `recurringAllocations` is the same array
+      // computed once above that already feeds expensesTotal,
+      // expensesByCategory and dailyMap[].expenses. No fourth call to
+      // expandRecurringExpensesDaily; no new query.
+      const ledger = buildDailyLedger({
+        dailyData,
+        expenses: (expenses ?? []).map((e) => ({
+          date: e.date,
+          amount: Number(e.amount),
+          category: e.category as ExpenseCategory,
+          // The select is untyped (no Database generic) — a dropped column
+          // arrives as undefined, not null.
+          description: (e.description as string | null | undefined) ?? null,
+        })),
+        recurringAllocations,
+      });
+
       return {
         completedOrders: currentCompleted,
         completedOrdersChange: pct(currentCompleted, prevCompleted),
@@ -438,6 +457,10 @@ export function useOrdersAnalytics(
         canceledOrders: currentCanceled,
         canceledOrdersChange: pct(currentCanceled, prevCanceled2),
         dailyData,
+        // libro-diario PR2 — one new field. No `ledgerClosingBalance` field
+        // (design D6): the displayed total is `netRevenue`, produced above
+        // by computeNetRevenue, not a second number derived from `ledger`.
+        ledger,
         // finanzas-gastos-recetas PR6 — spread of computeNetRevenue's result
         // (totalRevenue/expensesTotal/commissionTotal/netRevenue) plus the
         // period-over-period deltas via the same `pct` helper every other
