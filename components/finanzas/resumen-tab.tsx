@@ -27,6 +27,7 @@ import {
 import type { DateRange } from "react-day-picker";
 import { useOrdersAnalytics } from "@/lib/hooks/orders/use-orders-history";
 import { EXPENSE_CATEGORY_LABELS } from "@/components/finanzas/expense-list";
+import { DailyLedger } from "@/components/finanzas/daily-ledger";
 import { formatCurrency } from "@/lib/utils/format";
 import {
   ChartContainer,
@@ -67,6 +68,12 @@ const ALL_CATEGORIES = Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[]
  * `expenses` series) comes straight from `useOrdersAnalytics` — i.e. from
  * `computeNetRevenue`'s single call site. This component never subtracts or
  * adds money into those numbers (see design.md D5).
+ *
+ * libro-diario PR3: the `<DailyLedger>` card below the daily chart shows the
+ * SAME `analytics.netRevenue` field as its "Saldo del período" strip —
+ * there is no `ledgerClosingBalance`, no second number (design D6). It is
+ * the identical field the "Ingreso neto del período" card above already
+ * renders.
  *
  * gastos-recurrentes PR3: the expenses-by-category breakdown is no longer a
  * local aggregation. It used to run its own `useExpenses` + `reduce` here
@@ -377,6 +384,17 @@ export function ResumenTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* 5) Libro diario — read-only debit/credit ledger. `key={periodLabel}`
+          resets its internal pagination when the period changes (design
+          D5); `closingBalance` is fed the same netRevenue field the card
+          above already renders. */}
+      <DailyLedger
+        key={periodLabel}
+        entries={analytics?.ledger}
+        closingBalance={analytics?.netRevenue ?? 0}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

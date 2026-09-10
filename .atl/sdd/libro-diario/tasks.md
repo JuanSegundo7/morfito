@@ -240,17 +240,17 @@ REFACTOR cleans up without changing outcomes.
 
 ## Phase 3 (PR3, depends on PR2): `daily-ledger.tsx` component + mount (~230 lines, zero arithmetic)
 
-- [ ] 3.1 `[UI,medium]` Create `components/finanzas/daily-ledger.tsx` — `Card`/`CardHeader`/`CardTitle`
+- [x] 3.1 `[UI,medium]` Create `components/finanzas/daily-ledger.tsx` — `Card`/`CardHeader`/`CardTitle`
       ("Libro diario")/`CardContent` shape matching `resumen-tab.tsx`'s sibling cards (D10 — **not**
       jebbs' `CardHeading`, which has zero consumers anywhere in morfito); `components/ui/table.tsx` for the
       table body, columns `Fecha | Concepto | Debe | Haber | Saldo`; props are exactly `{ entries:
       LedgerEntry[] | undefined; closingBalance: number; isLoading: boolean }` (**no `periodLabel`, no
       `startDate`/`endDate`** — those were export-only in jebbs and D3 removes export). Day grouping preserves
       the array's own order (never re-sorted by the component), date cell printed once per group.
-- [ ] 3.2 `[UI,small]` In `daily-ledger.tsx` — render the "Debe"/"Haber" column choice from
+- [x] 3.2 `[UI,small]` In `daily-ledger.tsx` — render the "Debe"/"Haber" column choice from
       `LEDGER_DIRECTION[entry.source]` (imported as a **value**, not re-derived); render the `prorrateo`
       badge from `entry.source === "recurring"` (never a stored boolean).
-- [ ] 3.3 `[UI,medium]` **D2 gate — the component owns ALL Spanish/presentation mapping, never the service.**
+- [x] 3.3 `[UI,medium]` **D2 gate — the component owns ALL Spanish/presentation mapping, never the service.**
       In `daily-ledger.tsx`, resolve: `"Ventas"` for `source === "orders"`, `"Ingresos externos"` for
       `source === "external_income"`, the expense's own `concept` when non-null, and `` `Gasto
       (${EXPENSE_CATEGORY_LABELS[entry.category]})` `` (imported from `components/finanzas/expense-list.tsx`,
@@ -261,7 +261,7 @@ REFACTOR cleans up without changing outcomes.
       node vitest environment with zero React/`components/` imports, and the component is the ONLY place
       Spanish copy or Badge/color logic exists. *(spec: daily-ledger — the service emits DATA, the component
       emits SPANISH; no display string the data did not supply)*
-- [ ] 3.4 `[UI,small]` **D5 gate — pagination is 7 day-groups per page, NOT 10.** Implement pagination over
+- [x] 3.4 `[UI,small]` **D5 gate — pagination is 7 day-groups per page, NOT 10.** Implement pagination over
       day-groups (a group = a day that produced at least one row; rule 4 means empty days emit nothing and
       consume no page budget), `Math.min(page, totalPages)` clamping so a shrinking result set never renders
       an empty page mid-session. **Explicitly not jebbs' 10 days/page**: jebbs pays D1's per-template-per-day
@@ -270,10 +270,10 @@ REFACTOR cleans up without changing outcomes.
       page here holds far more rows at 10 days than jebbs' 10 days ever did. 7 days = one week, matching how
       an operator reconciling against a bank statement actually thinks, and caps a realistic page near 50 rows
       with 4 active templates. *(design D5 — explicit task, not folded into "build the table")*
-- [ ] 3.5 `[UI,small]` In `daily-ledger.tsx` — reset pagination via the parent's `key={periodLabel}` (task
+- [x] 3.5 `[UI,small]` In `daily-ledger.tsx` — reset pagination via the parent's `key={periodLabel}` (task
       3.7), **not** a `useEffect` keyed on `entries` (design D5 explicitly rejects the effect: it can fire on
       a background refetch when `key` cannot).
-- [ ] 3.6 `[UI,small]` In `daily-ledger.tsx` — render a skeleton while `isLoading` (never a `$0` or any numeric
+- [x] 3.6 `[UI,small]` In `daily-ledger.tsx` — render a skeleton while `isLoading` (never a `$0` or any numeric
       closing balance during loading); render "Sin movimientos en este período" inside the card when
       `entries` is empty (not loading); render the closing-balance strip **always**, fed directly from the
       `closingBalance` prop, including when there are zero rows — **jebbs nests the strip inside the
@@ -282,33 +282,45 @@ REFACTOR cleans up without changing outcomes.
       dropdown, or menu item anywhere (D3 — no `jspdf`/`jspdf-autotable`/`exceljs`). No `useMutation` call and
       no edit/delete/annotate/reorder affordance anywhere (rule 10). *(spec: finance-overview — loading never
       flashes `$0`; empty period shows the message AND a `$0` from `netRevenue`)*
-- [ ] 3.7 `[UI,small]` Modify `components/finanzas/resumen-tab.tsx` — mount `<DailyLedger key={periodLabel}
+- [x] 3.7 `[UI,small]` Modify `components/finanzas/resumen-tab.tsx` — mount `<DailyLedger key={periodLabel}
       entries={analytics?.ledger} closingBalance={analytics?.netRevenue ?? 0} isLoading={isLoading} />`
       immediately after the "Ingresos vs. gastos por día" card closes (`:379`). Extend the file's existing
       zero-arithmetic doc comment (`:64-69`) to state the ledger's displayed total is the same `netRevenue`
       field the "Ingreso neto del período" card (`:254-274`) already renders. Nothing else in the file
       changes — the 4-tab shell and `?tab=` union are untouched. *(spec: finance-overview — the ledger card
       mounts inside the existing Resumen tab, below the daily chart; no new top-level tab)*
-- [ ] 3.8 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
+- [x] 3.8 `[gate,small]` Run `npx tsc --noEmit` — MANDATORY.
 
 ### Manual QA — Phase 3 (no automated coverage; UI-layer and visual concerns)
 
-- [ ] QA3.1 **Headline check**: "Saldo del período" (the ledger's closing-balance strip) is
+- [x] QA3.1 **Headline check**: "Saldo del período" (the ledger's closing-balance strip) is
       character-identical to "Ingreso neto del período" three cards above it, in month, week, and custom
-      view — both read `analytics.netRevenue`.
+      view — both read `analytics.netRevenue`. *(Verified statically: both render `formatCurrency(analytics?.netRevenue ?? 0)` — the strip's `closingBalance` prop is fed no other value at the single mount site. Holds by construction, independent of view mode.)*
 - [ ] QA3.2 With 2+ active monthly templates prorating the same day, that day shows one badged `prorrateo`
-      row **per template**, each with its own description — never merged (D1).
+      row **per template**, each with its own description — never merged (D1). *(NOT verified live — requires
+      real recurring-expense templates in an actual environment; static review confirms the code never
+      collapses "recurring" rows, but this needs an actual multi-template day to see rendered.)*
 - [ ] QA3.3 A 31-day month with active templates paginates to the expected number of pages under the
       7-day-group rule; switching to week view shows page 1 of 1; switching back does not land on a stale
-      page (confirms the `key={periodLabel}` reset).
-- [ ] QA3.4 No `$0` closing balance flashes before data arrives — skeleton renders first.
-- [ ] QA3.5 An empty period shows "Sin movimientos en este período" **and** a `$0` closing-balance strip
-      simultaneously.
-- [ ] QA3.6 Inspect every interactive element in the rendered card — confirm none edits, deletes, annotates,
+      page (confirms the `key={periodLabel}` reset). *(NOT verified live — requires an actual dataset with a
+      31-day period; static review confirms the pagination math and the `key={periodLabel}` remount, but
+      this needs a real render to see the page count and reset behavior in practice.)*
+- [x] QA3.4 No `$0` closing balance flashes before data arrives — skeleton renders first. *(Verified
+      statically: `isLoading` returns the skeleton branch unconditionally before any closing-balance markup
+      exists in the tree.)*
+- [x] QA3.5 An empty period shows "Sin movimientos en este período" **and** a `$0` closing-balance strip
+      simultaneously. *(Verified statically: the closing-balance strip is rendered unconditionally, outside
+      the `dayGroups.length === 0` branch.)*
+- [x] QA3.6 Inspect every interactive element in the rendered card — confirm none edits, deletes, annotates,
       reorders, or creates a ledger row, and no export affordance (button/dropdown/menu item) exists anywhere.
-- [ ] QA3.7 Confirm `/finanzas` still renders exactly 4 top-level tabs (Resumen, Gastos, Insumos, Recetas)
-      after this change, with the ledger card appearing only inside Resumen.
-- [ ] QA3.8 Grep `package.json` — confirm `jspdf`, `jspdf-autotable`, `exceljs` are absent.
+      *(Verified via grep: the only `onClick`/`<Button>` occurrences in `daily-ledger.tsx` are the two
+      pagination arrows; no `useMutation`, no dropdown, no export.)*
+- [x] QA3.7 Confirm `/finanzas` still renders exactly 4 top-level tabs (Resumen, Gastos, Insumos, Recetas)
+      after this change, with the ledger card appearing only inside Resumen. *(Verified via grep on
+      `finanzas-tabs.tsx`: exactly 4 `TabsTrigger`s, unchanged by this PR — `resumen-tab.tsx` was the only
+      file touched.)*
+- [x] QA3.8 Grep `package.json` — confirm `jspdf`, `jspdf-autotable`, `exceljs` are absent. *(Verified —
+      grep returns no matches.)*
 
 ---
 
