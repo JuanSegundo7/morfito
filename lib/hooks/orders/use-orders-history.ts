@@ -107,6 +107,33 @@ export function useOrdersHistory(dateRange: { from: Date; to: Date }) {
 
 // ─── useOrdersAnalytics ─────────────────────────────────────────────────────
 
+// libro-diario PR1 (D4) — named because THREE consumers now read this array:
+// Resumen's bar chart, /rendimiento's AreaChart, and
+// lib/services/daily-ledger.ts's builder (PR2).
+/**
+ * One day of analytics.
+ *
+ * INVARIANT (libro-diario rule 8): `revenue === ordersRevenue +
+ * externalRevenue`, ALWAYS. `revenue` predates the split and is what both
+ * charts bind to; it keeps the same name and the same value forever. The two
+ * new fields exist so the ledger can emit "Ventas" and "Ingresos externos"
+ * as separate rows — they are additive, and nothing that read this array
+ * before needs to change.
+ */
+export interface DailyAnalyticsPoint {
+  date: string;
+  day: number;
+  orders: number;
+  /** Completed orders' total_amount for this day. */
+  ordersRevenue: number;
+  /** external_income.amount for this day. */
+  externalRevenue: number;
+  /** ordersRevenue + externalRevenue. Do not write it from anywhere else. */
+  revenue: number;
+  canceled: number;
+  expenses: number;
+}
+
 export function useOrdersAnalytics(
   selectedDate: Date,
   viewMode: ViewMode = "month",
@@ -201,9 +228,11 @@ export function useOrdersAnalytics(
         // gastos-recurrentes PR3 — `category` added so expensesByCategory
         // can sum the one-off side; the previous-period query below stays
         // total-only, it never needs a category breakdown.
+        // libro-diario PR1 — `description` added so the ledger can show each
+        // one-off expense's own concept text instead of only its category.
         supabase
           .from("expenses")
-          .select("date, amount, category")
+          .select("date, amount, category, description")
           .gte("date", startDateStr)
           .lte("date", endDateStr),
         supabase
@@ -327,24 +356,29 @@ export function useOrdersAnalytics(
         p > 0 ? ((curr - p) / p) * 100 : 0;
 
       // Group completed by AR local date
-      const dailyMap: Record<string, { orders: number; revenue: number; canceled: number; expenses: number }> = {};
+      // libro-diario PR1 (D9) — `revenue` is REMOVED from this accumulator.
+      // It used to be written by both the orders loop and the external-income
+      // loop below; now each writes its own field, and `revenue` is
+      // reconstructed exactly once at the dailyData.push() site below, so it
+      // can never drift from its two parts.
+      const dailyMap: Record<string, { orders: number; ordersRevenue: number; externalRevenue: number; canceled: number; expenses: number }> = {};
       for (const o of current || []) {
         const key = toArDateStr(new Date(o.updated_at));
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].orders++;
-        dailyMap[key].revenue += Number(o.total_amount);
+        dailyMap[key].ordersRevenue += Number(o.total_amount);
       }
       // Group canceled by AR local date
       for (const o of canceled || []) {
         const key = toArDateStr(new Date(o.updated_at));
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].canceled++;
       }
       // Add external income to daily revenue (date is already YYYY-MM-DD in AR time)
       for (const e of externalIncome || []) {
         const key = e.date;
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
-        dailyMap[key].revenue += Number(e.amount);
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
+        dailyMap[key].externalRevenue += Number(e.amount);
       }
       // Group expenses by their own DATE column (date is already YYYY-MM-DD
       // in AR time, same shape as external_income above) — feeds Resumen's
@@ -352,7 +386,7 @@ export function useOrdersAnalytics(
       // that's computeNetRevenue's job on the aggregate totals only.
       for (const e of expenses || []) {
         const key = e.date;
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].expenses += Number(e.amount);
       }
       // Rule 8: the per-day allocations must land in dailyData too, not just
@@ -363,21 +397,30 @@ export function useOrdersAnalytics(
       // via toArDateStr.
       for (const allocation of recurringAllocations) {
         const key = allocation.date;
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0, expenses: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].expenses += allocation.amount;
       }
 
       // Fill all days in range
-      const dailyData: { date: string; day: number; orders: number; revenue: number; canceled: number; expenses: number }[] = [];
+      const dailyData: DailyAnalyticsPoint[] = [];
       const cursor = new Date(start);
       while (cursor <= end) {
         const key = toArDateStr(cursor);
         const dayNum = parseInt(key.split("-")[2], 10);
+        // libro-diario PR1 (D9) — NOT a third accumulator. `revenue` is read
+        // by resumen-tab.tsx's bar chart AND /rendimiento's "Ingresos por
+        // día" AreaChart (page.tsx:624, 636). Same name, same value as before
+        // this PR, reconstructed in ONE expression so it cannot drift from
+        // its two parts.
+        const ordersRevenue = dailyMap[key]?.ordersRevenue || 0;
+        const externalRevenue = dailyMap[key]?.externalRevenue || 0;
         dailyData.push({
           date: key,
           day: dayNum,
           orders: dailyMap[key]?.orders || 0,
-          revenue: dailyMap[key]?.revenue || 0,
+          ordersRevenue,
+          externalRevenue,
+          revenue: ordersRevenue + externalRevenue,
           canceled: dailyMap[key]?.canceled || 0,
           expenses: dailyMap[key]?.expenses || 0,
         });
