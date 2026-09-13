@@ -1,6 +1,7 @@
 import type React from "react";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { MotionProvider } from "@/components/providers/motion-provider";
 
 import { Analytics } from "@vercel/analytics/next";
 import { SidebarLayout } from "@/components/layout/sidebar-layout";
@@ -10,6 +11,7 @@ import { BillingBlock } from "@/components/billing/billing-block";
 import { getEntitlements } from "@/lib/entitlements";
 import { resolveVertical } from "@/lib/verticals";
 import { VerticalProvider } from "@/components/providers/vertical-provider";
+import { ServicesProvider } from "@/components/providers/services-provider";
 
 export default async function DashboardLayout({
   children,
@@ -43,6 +45,7 @@ export default async function DashboardLayout({
   return (
     <ThemeProvider>
       <QueryProvider>
+        <ServicesProvider activeServiceKeys={activeServiceKeys}>
         <VerticalProvider vertical={vertical}>
           {isBlocked && entitlements.status === "known" ? (
             <BillingBlock
@@ -50,13 +53,43 @@ export default async function DashboardLayout({
               billing={entitlements.data.billing}
             />
           ) : (
-            <SidebarProvider defaultOpen={false}>
-              <SidebarLayout activeServiceKeys={activeServiceKeys}>{children}</SidebarLayout>
-              <Toaster richColors position="top-right" />
-            </SidebarProvider>
+            // MotionProvider envuelve solo el arbol que puede tener motion.*
+            // (sidebar, kanban) -- Toaster/Analytics quedan afuera a proposito,
+            // mismo criterio que ya separa a Toaster de SidebarProvider abajo.
+            <MotionProvider>
+              <SidebarProvider defaultOpen={false}>
+                <SidebarLayout activeServiceKeys={activeServiceKeys}>{children}</SidebarLayout>
+              </SidebarProvider>
+            </MotionProvider>
           )}
+          {/* Taxonomia de toast (regla de la casa):
+              - toast.error   = lo pedido NO paso.
+              - toast.warning = paso, pero un efecto secundario fallo -- puede
+                requerir accion (ej: se guardo el gasto pero no se ajusto el
+                stock).
+              - toast.info    = paso; contexto que no se pidio.
+              No usar error para una falla parcial, ni warning para una falla
+              total -- son distinguibles a proposito. */}
+          {/* Toaster afuera de SidebarProvider a proposito (jebbs-dashboard@
+              b40eafa): sonner no esta aplicando su propio position:fixed en
+              este arbol, y mientras esta seccion quedaba adentro del flex de
+              sidebar-wrapper, contaba como un tercer hijo en fila y estiraba
+              TODO el layout mas alla del viewport -- scroll doble en cada
+              pagina. Afuera del SidebarProvider, aunque el position:fixed
+              siga sin aplicar, ya no puede volver a inflar ese contenedor. */}
+          <Toaster
+            richColors
+            position="top-right"
+            theme="dark"
+            toastOptions={{
+              classNames: {
+                toast: "material-thick !text-foreground",
+              },
+            }}
+          />
           <Analytics />
         </VerticalProvider>
+        </ServicesProvider>
       </QueryProvider>
     </ThemeProvider>
   );

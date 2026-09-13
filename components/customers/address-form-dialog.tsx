@@ -90,7 +90,7 @@ export function AddressFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md ios-glass rounded-2xl">
+      <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Editar dirección" : "Nueva dirección"}

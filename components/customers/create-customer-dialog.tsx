@@ -69,7 +69,7 @@ export function CreateCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md ios-glass rounded-2xl">
+      <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>Nuevo cliente</DialogTitle>
         </DialogHeader>
@@ -96,7 +96,7 @@ export function CreateCustomerDialog({
 
           <Separator />
 
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+          <p className="text-overline text-muted-foreground uppercase">
             Dirección (opcional)
           </p>
 

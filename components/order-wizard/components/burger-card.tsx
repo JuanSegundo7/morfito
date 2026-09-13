@@ -36,11 +36,11 @@ export function BurgerCard({ burger }: { burger: Burger }) {
   return (
     <Card
       onClick={addBurger}
-      className="cursor-pointer transition hover:shadow-sm"
+      className="cursor-pointer transition hover:shadow-sm active:scale-[0.98] active:duration-75"
     >
       <CardContent className="p-3">
         <p className="font-medium">{burger.name}</p>
-        <p className="text-sm font-semibold text-primary">
+        <p className="text-subheadline font-semibold text-primary">
           {formatCurrency(burger.base_price)}
         </p>
       </CardContent>

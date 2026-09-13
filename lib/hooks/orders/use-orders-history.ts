@@ -2,7 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { Order } from "@/lib/types";
+import type { ExpenseCategory, Order, RecurringExpense } from "@/lib/types";
+import { computeNetRevenue } from "@/lib/services/finance-summary";
+import { parseCalendarDate } from "@/lib/utils/calendar-date";
+import { expandRecurringExpensesDaily, sumAllocations } from "@/lib/services/recurring-expenses";
+import { buildDailyLedger } from "@/lib/services/daily-ledger";
 
 const TZ = "America/Argentina/Buenos_Aires";
 
@@ -104,6 +108,33 @@ export function useOrdersHistory(dateRange: { from: Date; to: Date }) {
 
 // ─── useOrdersAnalytics ─────────────────────────────────────────────────────
 
+// libro-diario PR1 (D4) — named because THREE consumers now read this array:
+// Resumen's bar chart, /rendimiento's AreaChart, and
+// lib/services/daily-ledger.ts's builder (PR2).
+/**
+ * One day of analytics.
+ *
+ * INVARIANT (libro-diario rule 8): `revenue === ordersRevenue +
+ * externalRevenue`, ALWAYS. `revenue` predates the split and is what both
+ * charts bind to; it keeps the same name and the same value forever. The two
+ * new fields exist so the ledger can emit "Ventas" and "Ingresos externos"
+ * as separate rows — they are additive, and nothing that read this array
+ * before needs to change.
+ */
+export interface DailyAnalyticsPoint {
+  date: string;
+  day: number;
+  orders: number;
+  /** Completed orders' total_amount for this day. */
+  ordersRevenue: number;
+  /** external_income.amount for this day. */
+  externalRevenue: number;
+  /** ordersRevenue + externalRevenue. Do not write it from anywhere else. */
+  revenue: number;
+  canceled: number;
+  expenses: number;
+}
+
 export function useOrdersAnalytics(
   selectedDate: Date,
   viewMode: ViewMode = "month",
@@ -155,10 +186,13 @@ export function useOrdersAnalytics(
         { data: prevCanceled, error: e4 },
         { data: externalIncome, error: e5 },
         { data: prevExternalIncome, error: e6 },
+        { data: expenses, error: e7 },
+        { data: prevExpenses, error: e8 },
+        { data: recurringTemplates, error: e9 },
       ] = await Promise.all([
         supabase
           .from("orders")
-          .select("total_amount, updated_at")
+          .select("total_amount, commission_amount, updated_at")
           .eq("status", "completed")
           .gte("updated_at", start.toISOString())
           .lte("updated_at", end.toISOString()),
@@ -190,6 +224,32 @@ export function useOrdersAnalytics(
           .select("date, amount")
           .gte("date", prevStartDateStr)
           .lte("date", prevEndDateStr),
+        // finanzas-gastos-recetas PR6 — same DATE-column treatment as
+        // external_income above (expenses.date is a DATE, not a timestamp).
+        // gastos-recurrentes PR3 — `category` added so expensesByCategory
+        // can sum the one-off side; the previous-period query below stays
+        // total-only, it never needs a category breakdown.
+        // libro-diario PR1 — `description` added so the ledger can show each
+        // one-off expense's own concept text instead of only its category.
+        supabase
+          .from("expenses")
+          .select("date, amount, category, description")
+          .gte("date", startDateStr)
+          .lte("date", endDateStr),
+        supabase
+          .from("expenses")
+          .select("date, amount")
+          .gte("date", prevStartDateStr)
+          .lte("date", prevEndDateStr),
+        // gastos-recurrentes PR3 — NO DATE FILTER, on purpose (rule 5). A
+        // template with start_date in 2024 and end_date IS NULL still
+        // contributes to this month; any gte("start_date", …) would silently
+        // drop exactly the long-running templates this feature exists for.
+        // Overlap is decided inside expandRecurringExpensesDaily, never in
+        // SQL. The table holds single-digit rows.
+        supabase
+          .from("recurring_expenses")
+          .select("id, amount, category, description, frequency, start_date, end_date"),
       ]);
 
       if (e1) throw e1;
@@ -198,6 +258,28 @@ export function useOrdersAnalytics(
       if (e4) throw e4;
       if (e5) throw e5;
       if (e6) throw e6;
+      if (e7) throw e7;
+      if (e8) throw e8;
+      if (e9) throw e9;
+
+      // gastos-recurrentes PR3 — rule 6. start/end above are AR-LOCAL
+      // INSTANTS (arDateToUTC :17-23 bakes +3h in). Proration walks day
+      // boundaries, so it must receive pure UTC-midnight calendar dates or
+      // every month edge is off by one day's rate.
+      const periodStartCal = parseCalendarDate(startDateStr);
+      const periodEndCal = parseCalendarDate(endDateStr);
+      const prevPeriodStartCal = parseCalendarDate(prevStartDateStr);
+      const prevPeriodEndCal = parseCalendarDate(prevEndDateStr);
+
+      const templates = (recurringTemplates ?? []) as RecurringExpense[];
+      // Computed ONCE and reused three times below (total, daily fold,
+      // category split) — design D6. That is what makes
+      // sum(dailyData[].expenses) === expensesTotal structural rather than
+      // merely tested.
+      const recurringAllocations = expandRecurringExpensesDaily(templates, periodStartCal, periodEndCal);
+      const prevRecurringTotal = sumAllocations(
+        expandRecurringExpensesDaily(templates, prevPeriodStartCal, prevPeriodEndCal),
+      );
 
       const currentCompleted = current?.length || 0;
       const prevCompleted = prev?.length || 0;
@@ -214,6 +296,49 @@ export function useOrdersAnalytics(
       const prevExternalRevenue =
         prevExternalIncome?.reduce((acc, e) => acc + Number(e.amount), 0) || 0;
       const prevRevenue = prevOrdersRevenue + prevExternalRevenue;
+
+      // finanzas-gastos-recetas PR6 — see lib/services/finance-summary.ts's
+      // header for why commissionTotal is informational-only and never an
+      // operand of netRevenue (orders.total_amount is already net of
+      // commission, per use-create-order.ts).
+      const oneOffExpensesTotal =
+        expenses?.reduce((acc, e) => acc + Number(e.amount), 0) || 0;
+      const expensesTotal = oneOffExpensesTotal + sumAllocations(recurringAllocations);
+      const prevOneOffExpensesTotal =
+        prevExpenses?.reduce((acc, e) => acc + Number(e.amount), 0) || 0;
+      // Rule 7: prorate the PREVIOUS period too, or the first period with a
+      // template manufactures a phantom expensesChange/netRevenueChange spike.
+      const prevExpensesTotal = prevOneOffExpensesTotal + prevRecurringTotal;
+      const commissionTotal =
+        current?.reduce((acc, o) => acc + Number(o.commission_amount), 0) || 0;
+
+      const netRevenueResult = computeNetRevenue({
+        totalRevenue: currentRevenue,
+        expensesTotal,
+        commissionTotalInformational: commissionTotal,
+      });
+
+      // gastos-recurrentes PR3 (rule 9 / D7) — computed ONCE here, from BOTH
+      // sources, and returned. resumen-tab.tsx and gastos-tab.tsx read this
+      // instead of each running their own useExpenses + reduce; that
+      // duplication is why the category cards were one arithmetic change away
+      // from disagreeing with the Gastos tile above them.
+      // Object literal, not Object.fromEntries: TS checks all five keys
+      // against ExpenseCategory here, so a sixth category is a compile error
+      // at this line.
+      const expensesByCategory: Record<ExpenseCategory, number> = {
+        supplies: 0,
+        services: 0,
+        salaries: 0,
+        rent: 0,
+        other: 0,
+      };
+      for (const e of expenses ?? []) {
+        expensesByCategory[e.category as ExpenseCategory] += Number(e.amount);
+      }
+      for (const allocation of recurringAllocations) {
+        expensesByCategory[allocation.category] += allocation.amount;
+      }
 
       const msPerDay = 1000 * 60 * 60 * 24;
       const daysInPeriod =
@@ -232,46 +357,98 @@ export function useOrdersAnalytics(
         p > 0 ? ((curr - p) / p) * 100 : 0;
 
       // Group completed by AR local date
-      const dailyMap: Record<string, { orders: number; revenue: number; canceled: number }> = {};
+      // libro-diario PR1 (D9) — `revenue` is REMOVED from this accumulator.
+      // It used to be written by both the orders loop and the external-income
+      // loop below; now each writes its own field, and `revenue` is
+      // reconstructed exactly once at the dailyData.push() site below, so it
+      // can never drift from its two parts.
+      const dailyMap: Record<string, { orders: number; ordersRevenue: number; externalRevenue: number; canceled: number; expenses: number }> = {};
       for (const o of current || []) {
         const key = toArDateStr(new Date(o.updated_at));
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].orders++;
-        dailyMap[key].revenue += Number(o.total_amount);
+        dailyMap[key].ordersRevenue += Number(o.total_amount);
       }
       // Group canceled by AR local date
       for (const o of canceled || []) {
         const key = toArDateStr(new Date(o.updated_at));
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0 };
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
         dailyMap[key].canceled++;
       }
       // Add external income to daily revenue (date is already YYYY-MM-DD in AR time)
       for (const e of externalIncome || []) {
         const key = e.date;
-        if (!dailyMap[key]) dailyMap[key] = { orders: 0, revenue: 0, canceled: 0 };
-        dailyMap[key].revenue += Number(e.amount);
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
+        dailyMap[key].externalRevenue += Number(e.amount);
+      }
+      // Group expenses by their own DATE column (date is already YYYY-MM-DD
+      // in AR time, same shape as external_income above) — feeds Resumen's
+      // daily income-vs-expenses chart. Never netted against revenue here;
+      // that's computeNetRevenue's job on the aggregate totals only.
+      for (const e of expenses || []) {
+        const key = e.date;
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
+        dailyMap[key].expenses += Number(e.amount);
+      }
+      // Rule 8: the per-day allocations must land in dailyData too, not just
+      // in the aggregate, or Resumen's "Ingresos vs. gastos por día" chart
+      // silently disagrees with the Gastos tile directly above it. Keys align
+      // exactly: allocation.date is formatCalendarDate over [startDateStr,
+      // endDateStr], and the gap-fill loop below walks the same string range
+      // via toArDateStr.
+      for (const allocation of recurringAllocations) {
+        const key = allocation.date;
+        if (!dailyMap[key]) dailyMap[key] = { orders: 0, ordersRevenue: 0, externalRevenue: 0, canceled: 0, expenses: 0 };
+        dailyMap[key].expenses += allocation.amount;
       }
 
       // Fill all days in range
-      const dailyData: { date: string; day: number; orders: number; revenue: number; canceled: number }[] = [];
+      const dailyData: DailyAnalyticsPoint[] = [];
       const cursor = new Date(start);
       while (cursor <= end) {
         const key = toArDateStr(cursor);
         const dayNum = parseInt(key.split("-")[2], 10);
+        // libro-diario PR1 (D9) — NOT a third accumulator. `revenue` is read
+        // by resumen-tab.tsx's bar chart AND /rendimiento's "Ingresos por
+        // día" AreaChart (page.tsx:624, 636). Same name, same value as before
+        // this PR, reconstructed in ONE expression so it cannot drift from
+        // its two parts.
+        const ordersRevenue = dailyMap[key]?.ordersRevenue || 0;
+        const externalRevenue = dailyMap[key]?.externalRevenue || 0;
         dailyData.push({
           date: key,
           day: dayNum,
           orders: dailyMap[key]?.orders || 0,
-          revenue: dailyMap[key]?.revenue || 0,
+          ordersRevenue,
+          externalRevenue,
+          revenue: ordersRevenue + externalRevenue,
           canceled: dailyMap[key]?.canceled || 0,
+          expenses: dailyMap[key]?.expenses || 0,
         });
         cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
 
+      // libro-diario PR2 — a PROJECTION of data already in hand, not a
+      // fourth aggregation: `recurringAllocations` is the same array
+      // computed once above that already feeds expensesTotal,
+      // expensesByCategory and dailyMap[].expenses. No fourth call to
+      // expandRecurringExpensesDaily; no new query.
+      const ledger = buildDailyLedger({
+        dailyData,
+        expenses: (expenses ?? []).map((e) => ({
+          date: e.date,
+          amount: Number(e.amount),
+          category: e.category as ExpenseCategory,
+          // The select is untyped (no Database generic) — a dropped column
+          // arrives as undefined, not null.
+          description: (e.description as string | null | undefined) ?? null,
+        })),
+        recurringAllocations,
+      });
+
       return {
         completedOrders: currentCompleted,
         completedOrdersChange: pct(currentCompleted, prevCompleted),
-        totalRevenue: currentRevenue,
         revenueChange: pct(currentRevenue, prevRevenue),
         avgOrdersPerDay,
         avgOrdersPerDayChange: pct(avgOrdersPerDay, prevAvgOrdersPerDay),
@@ -280,6 +457,22 @@ export function useOrdersAnalytics(
         canceledOrders: currentCanceled,
         canceledOrdersChange: pct(currentCanceled, prevCanceled2),
         dailyData,
+        // libro-diario PR2 — one new field. No `ledgerClosingBalance` field
+        // (design D6): the displayed total is `netRevenue`, produced above
+        // by computeNetRevenue, not a second number derived from `ledger`.
+        ledger,
+        // finanzas-gastos-recetas PR6 — spread of computeNetRevenue's result
+        // (totalRevenue/expensesTotal/commissionTotal/netRevenue) plus the
+        // period-over-period deltas via the same `pct` helper every other
+        // metric above already uses. No signature change to this hook:
+        // these are additive fields /rendimiento simply doesn't consume.
+        ...netRevenueResult,
+        expensesByCategory,
+        expensesChange: pct(expensesTotal, prevExpensesTotal),
+        netRevenueChange: pct(
+          netRevenueResult.netRevenue,
+          prevRevenue - prevExpensesTotal,
+        ),
       };
     },
   });

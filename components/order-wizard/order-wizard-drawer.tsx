@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
+import { useSpring } from "@/lib/motion";
 import {
   Sheet,
   SheetContent,
@@ -55,6 +58,10 @@ export function OrderWizardDrawer({
   orderToEdit,
 }: OrderWizardDrawerProps) {
   const [step, setStep] = useState<WizardStep>("customer");
+  // +1 = avanzando, -1 = retrocediendo — decide de que lado entra/sale el
+  // paso (§7: el camino de vuelta tiene que espejar al de ida, no ser el
+  // mismo slide en la misma direccion sin importar hacia donde se navega).
+  const [direction, setDirection] = useState(1);
   const [customerPage, setCustomerPage] = useState(1);
 
   // First real behavioral use of a VerticalFeatureFlags flag (see
@@ -261,6 +268,7 @@ export function OrderWizardDrawer({
 
   // ================= NAVIGATION =================
   const goNext = () => {
+    setDirection(1);
     if (step === "customer") setStep(hasCombos ? "combos" : "items");
     else if (step === "combos") setStep("items");
     else if (step === "items") setStep("sides");
@@ -268,11 +276,23 @@ export function OrderWizardDrawer({
   };
 
   const goBack = () => {
+    setDirection(-1);
     if (step === "combos") setStep("customer");
     else if (step === "items") setStep(hasCombos ? "combos" : "customer");
     else if (step === "sides") setStep("items");
     else if (step === "summary") setStep("sides");
   };
+
+  // Slide direccional del body del paso — bajo MotionConfig
+  // reducedMotion="user" (app/(dashboard)/layout.tsx) el desplazamiento en
+  // x se cae solo y queda un cross-fade, que es exactamente el equivalente
+  // de reduced motion que pide §14. No hace falta ramificar a mano acá.
+  const stepVariants = {
+    enter: (dir: number) => ({ x: dir > 0 ? 24 : -24, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? -24 : 24, opacity: 0 }),
+  };
+  const stepTransition = useSpring("move");
 
   // ================= RENDER =================
   return (
@@ -284,7 +304,7 @@ export function OrderWizardDrawer({
         >
           {/* HEADER */}
           <SheetHeader className="border-b px-6 py-4">
-            <SheetTitle className="text-lg">
+            <SheetTitle className="text-title3">
               {mode === "edit"
                 ? `Editar Pedido #${orderToEdit?.order_number}`
                 : "Crear Pedido"}
@@ -295,7 +315,7 @@ export function OrderWizardDrawer({
                 <div key={s.key} className="flex items-center shrink-0">
                   <div
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors",
+                      "flex h-7 w-7 items-center justify-center rounded-full text-caption font-medium transition-colors",
                       step === s.key
                         ? "bg-primary text-primary-foreground"
                         : currentStepIndex > i
@@ -309,7 +329,7 @@ export function OrderWizardDrawer({
                       i + 1
                     )}
                   </div>
-                  <span className="ml-1.5 text-xs">{s.label}</span>
+                  <span className="ml-1.5 text-caption">{s.label}</span>
                   {i < steps.length - 1 && (
                     <div className="mx-2 h-px w-5 bg-border" />
                   )}
@@ -320,7 +340,17 @@ export function OrderWizardDrawer({
 
           {/* CONTENT */}
           <div className="flex-1 overflow-y-auto">
-            <div className="p-6">
+            <AnimatePresence mode="wait" custom={direction} initial={false}>
+              <motion.div
+                key={step}
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={stepTransition}
+                className="p-6"
+              >
               {step === "customer" && (
                 <CustomerStep
                   customerSearch={wizard.customer.customerSearch}
@@ -467,27 +497,28 @@ export function OrderWizardDrawer({
                   onPriceAdjustmentChange={wizard.settings.setPriceAdjustment}
                 />
               )}
-            </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* TOTAL BAR */}
           {showTotalBar && (
             <div className="shrink-0 border-t bg-muted/40 px-6 py-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-subheadline text-muted-foreground">
                   <span>Subtotal</span>
                   {totalItems > 0 && (
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-caption2 font-semibold text-primary-foreground">
                       {totalItems}
                     </span>
                   )}
                 </div>
-                <span className="text-base font-semibold text-foreground">
+                <span className="text-callout font-semibold text-foreground">
                   {formatCurrency(wizard.subtotal)}
                 </span>
               </div>
               {totalItems > 0 && (
-                <div className="mt-0.5 flex gap-3 text-xs text-muted-foreground">
+                <div className="mt-0.5 flex gap-3 text-caption text-muted-foreground">
                   {totalComboItems > 0 && (
                     <span>
                       {totalComboItems} combo{totalComboItems > 1 ? "s" : ""}
@@ -530,7 +561,7 @@ export function OrderWizardDrawer({
                   >
                     ←
                   </Button>
-                  <span className="text-sm font-medium">
+                  <span className="text-subheadline font-medium">
                     {customerPage} / {customerTotalPages}
                   </span>
                   <Button

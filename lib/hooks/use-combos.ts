@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import {
   Combo,
   ComboSlotRule,
@@ -164,7 +165,7 @@ export function useDeleteCombo() {
     },
     onError: (error: any) => {
       console.error("❌ Error in onError:", error);
-      alert(error.message || "Error al eliminar combo");
+      toast.error(error.message || "Error al eliminar combo");
     },
   });
 }

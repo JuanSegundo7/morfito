@@ -33,7 +33,7 @@ export function CustomerList({
 
   if (customers.length === 0) {
     return (
-      <div className="p-8 text-center text-sm text-muted-foreground">
+      <div className="p-8 text-center text-subheadline text-muted-foreground">
         No se encontraron clientes
       </div>
     );
@@ -50,9 +50,9 @@ export function CustomerList({
             selectedId === customer.id && "bg-muted ring-1 ring-primary/30",
           )}
         >
-          <p className="font-medium text-sm truncate">{customer.name}</p>
+          <p className="font-medium text-subheadline truncate">{customer.name}</p>
           {customer.phone && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+            <p className="text-caption text-muted-foreground flex items-center gap-1 mt-0.5">
               <Phone className="h-3 w-3" />
               {customer.phone}
             </p>

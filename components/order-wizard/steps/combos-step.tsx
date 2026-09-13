@@ -105,7 +105,7 @@ export function CombosStep({
     <div className="space-y-6">
       {/* Available Combos */}
       <div>
-        <h3 className="text-sm font-medium mb-3">
+        <h3 className="text-subheadline font-medium mb-3">
           Combos disponibles (opcional)
         </h3>
 
@@ -118,7 +118,7 @@ export function CombosStep({
                 <Card
                   key={combo.id}
                   className={cn(
-                    "cursor-pointer transition-all bg-card relative",
+                    "cursor-pointer transition-all bg-card relative active:scale-[0.98] active:duration-75",
                     qty > 0
                       ? "ring-2 ring-primary border-primary"
                       : "hover:shadow-sm",
@@ -128,12 +128,12 @@ export function CombosStep({
                   <CardContent className="p-3">
                     {/* ✅ Badge igual que en burgers */}
                     {qty > 0 && (
-                      <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                      <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-caption">
                         {qty}
                       </Badge>
                     )}
                     <p className="font-medium">{combo.name}</p>
-                    <p className="text-sm font-semibold text-primary">
+                    <p className="text-subheadline font-semibold text-primary">
                       {formatCurrency(combo.price)}
                     </p>
                   </CardContent>
@@ -147,7 +147,7 @@ export function CombosStep({
       {selectedCombos.map((comboInstance) => (
         <div key={comboInstance.id} className="space-y-3">
           <div className="flex items-center justify-between px-1">
-            <h4 className="font-medium text-sm">{comboInstance.combo.name}</h4>
+            <h4 className="font-medium text-subheadline">{comboInstance.combo.name}</h4>
             <Button
               variant="ghost"
               size="icon"
@@ -165,7 +165,7 @@ export function CombosStep({
               return (
                 <Card key={slot.slotId}>
                   <CardContent className="space-y-3 p-4">
-                    <h5 className="text-sm font-medium">
+                    <h5 className="text-subheadline font-medium">
                       Hamburguesas ({remaining} disponibles)
                     </h5>
 
@@ -228,7 +228,7 @@ export function CombosStep({
                             <Card
                               key={burger.id}
                               className={cn(
-                                "cursor-pointer transition-all bg-card relative",
+                                "cursor-pointer transition-all bg-card relative active:scale-[0.98] active:duration-75",
                                 qty > 0
                                   ? "ring-2 ring-primary border-primary animate-in zoom-in-95 duration-300"
                                   : "hover:shadow-sm",
@@ -239,12 +239,12 @@ export function CombosStep({
                             >
                               <CardContent className="p-3">
                                 {qty > 0 && (
-                                  <Badge className="absolute -top-2 -right-2 h-5 w-5 animate-in zoom-in-50 fade-in rounded-full p-0 flex items-center justify-center text-xs duration-200">
+                                  <Badge className="absolute -top-2 -right-2 h-5 w-5 animate-in zoom-in-50 fade-in rounded-full p-0 flex items-center justify-center text-caption duration-200">
                                     {qty}
                                   </Badge>
                                 )}
                                 <p className="font-medium">{burger.name}</p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-subheadline text-muted-foreground">
                                   {formatCurrency(burger.base_price)}
                                 </p>
                               </CardContent>

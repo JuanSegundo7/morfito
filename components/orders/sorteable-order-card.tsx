@@ -10,11 +10,13 @@ export function SortableOrderCard({
   onViewDetails,
   onEditOrder, // 🆕
   onChangeStatus,
+  onMoveBack,
 }: {
   order: Order;
   onViewDetails: (order: Order) => void;
   onEditOrder?: (order: Order) => void; // 🆕
   onChangeStatus?: (order: Order) => void;
+  onMoveBack?: (order: Order) => void;
 }) {
   const {
     attributes,
@@ -29,7 +31,11 @@ export function SortableOrderCard({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? transition : undefined,
+    // dnd-kit: la transicion es para los hermanos DESPLAZADOS deslizando a
+    // su nuevo lugar. El item bajo el puntero debe trackear 1:1, sin
+    // interpolar -- estaba invertido (el arrastrado animaba 200ms y los
+    // hermanos saltaban instantaneo).
+    transition: isDragging ? undefined : transition,
   };
 
   return (
@@ -50,7 +56,11 @@ export function SortableOrderCard({
         style={style}
         {...attributes}
         {...listeners}
-        className="hidden lg:block"
+        // useSortable ya da role="button" tabindex="0" aria-roledescription=
+        // "sortable" -- sin este ring, alguien tabulando el tablero es
+        // invisible para si mismo. rounded-2xl para que el ring calce con
+        // el radio real de la Card de adentro.
+        className="hidden lg:block rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         <OrderCard
           order={order}
@@ -59,6 +69,7 @@ export function SortableOrderCard({
           visualStatus={order.status}
           onEditOrder={onEditOrder} // 🆕
           onChangeStatus={onChangeStatus}
+          onMoveBack={onMoveBack}
         />
       </div>
     </>

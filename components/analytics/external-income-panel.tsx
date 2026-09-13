@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   useExternalIncome,
   useCreateExternalIncome,
@@ -110,14 +111,14 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
       <Card className="ios-glass bg-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2">
               <Wallet className="h-4 w-4 text-muted-foreground" />
               Ingresos manuales
             </CardTitle>
             <Button
               size="sm"
               variant="outline"
-              className="h-8 gap-1.5 text-xs dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              className="h-8 gap-1.5 text-caption dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
               onClick={() => setDialogOpen(true)}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -132,7 +133,7 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
               <Skeleton className="h-10" />
             </div>
           ) : !incomes || incomes.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-subheadline text-muted-foreground text-center py-4">
               Sin ingresos manuales en este período
             </p>
           ) : (
@@ -142,23 +143,44 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
                   key={income.id}
                   className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-2.5"
                 >
-                  <span className="text-xs text-muted-foreground w-20 shrink-0">
+                  <span className="text-caption text-muted-foreground w-20 shrink-0">
                     {formatDisplayDate(income.date)}
                   </span>
-                  <span className="flex-1 text-sm text-muted-foreground truncate">
+                  <span className="flex-1 text-subheadline text-muted-foreground truncate">
                     {income.description ?? "—"}
                   </span>
-                  <span className="text-sm font-semibold tabular-nums">
+                  <span className="text-subheadline font-semibold tabular-nums">
                     {formatCurrency(income.amount)}
                   </span>
                   <Button
-                    size="icon"
+                    size="icon-sm"
                     variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => deleteIncome.mutate(income.id)}
+                    className="text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => {
+                      // Undo-toast, no AlertDialog: useCreateExternalIncome
+                      // toma exactamente {date, amount, description} -- todo
+                      // lo que esta fila ya tiene en scope, asi que restaurar
+                      // es un solo call, no una reconstruccion.
+                      const snapshot = {
+                        date: income.date,
+                        amount: income.amount,
+                        description: income.description,
+                      };
+                      deleteIncome.mutate(income.id, {
+                        onSuccess: () => {
+                          toast.success("Ingreso eliminado", {
+                            duration: 8000,
+                            action: {
+                              label: "Deshacer",
+                              onClick: () => createIncome.mutate(snapshot),
+                            },
+                          });
+                        },
+                      });
+                    }}
                     disabled={deleteIncome.isPending}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
@@ -174,7 +196,7 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-caption text-muted-foreground">
                     {page} / {totalPages}
                   </span>
                   <Button
@@ -191,8 +213,8 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
 
               {totalExternal > 0 && (
                 <div className="flex items-center justify-between border-t pt-2 px-1">
-                  <span className="text-xs text-muted-foreground">Total período</span>
-                  <span className="text-sm font-bold tabular-nums">
+                  <span className="text-caption text-muted-foreground">Total período</span>
+                  <span className="text-subheadline font-bold tabular-nums">
                     {formatCurrency(totalExternal)}
                   </span>
                 </div>
@@ -211,7 +233,7 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
           <div className="space-y-4 py-2">
             {/* Date picker */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Fecha</label>
+              <label className="text-subheadline font-medium">Fecha</label>
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -242,7 +264,7 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
 
             {/* Amount */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Monto</label>
+              <label className="text-subheadline font-medium">Monto</label>
               <Input
                 type="number"
                 min="0"
@@ -285,7 +307,7 @@ export function ExternalIncomePanel({ startDate, endDate }: ExternalIncomePanelP
 
             {/* Description */}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">
+              <label className="text-subheadline font-medium">
                 Descripción{" "}
                 <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>

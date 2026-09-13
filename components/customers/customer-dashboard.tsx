@@ -74,7 +74,7 @@ export function CustomersDashboard() {
           )}
         >
           <div className="shrink-0 p-3 border-b">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {customers.length} cliente{customers.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -100,7 +100,7 @@ export function CustomersDashboard() {
                 >
                   ←
                 </Button>
-                <span className="text-sm font-medium">
+                <span className="text-subheadline font-medium">
                   {page} / {totalPages}
                 </span>
                 <Button
@@ -147,7 +147,7 @@ export function CustomersDashboard() {
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
               <Users className="h-12 w-12 opacity-20" />
-              <p className="text-sm">Seleccioná un cliente para ver sus detalles</p>
+              <p className="text-subheadline">Seleccioná un cliente para ver sus detalles</p>
             </div>
           )}
         </div>

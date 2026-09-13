@@ -9,7 +9,7 @@
 -- first). Two independent, additive pieces, kept in one file because
 -- they're both prerequisites for the SAME feature (per-product recipe
 -- cost, lib/services/recipe-cost.ts) and both needed by the same PR's UI
--- (components/precios/recipe-editor.tsx):
+-- (components/finanzas/recipe-editor.tsx):
 --
 --   1. `product_supplies` — the recipe join table: which supplies (and how
 --      much of each) a product consumes. One row per product+supply line.

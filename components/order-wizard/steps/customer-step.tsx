@@ -90,9 +90,9 @@ export function CustomerStep({
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   <p className="font-medium">Cliente del Pedido</p>
                 </div>
-                <p className="text-sm font-semibold">{selectedCustomer.name}</p>
+                <p className="text-subheadline font-semibold">{selectedCustomer.name}</p>
                 {selectedCustomer.phone && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-subheadline text-muted-foreground">
                     📞 {selectedCustomer.phone}
                   </p>
                 )}
@@ -119,7 +119,10 @@ export function CustomerStep({
         <div className="flex gap-2">
           <Button
             variant={!isNewCustomer ? "default" : "outline"}
-            className="flex-1 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className={cn(
+              "flex-1",
+              isNewCustomer && "dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
+            )}
             onClick={() => onToggleNewCustomer(false)}
           >
             <User className="mr-2 h-4 w-4" />
@@ -127,7 +130,10 @@ export function CustomerStep({
           </Button>
           <Button
             variant={isNewCustomer ? "default" : "outline"}
-            className="flex-1 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className={cn(
+              "flex-1",
+              !isNewCustomer && "dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700",
+            )}
             onClick={() => onToggleNewCustomer(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -157,7 +163,7 @@ export function CustomerStep({
                 <Card
                   key={customer.id}
                   className={cn(
-                    "cursor-pointer transition-all hover:shadow-sm bg-card",
+                    "cursor-pointer transition-all hover:shadow-sm bg-card active:scale-[0.98] active:duration-75",
                     isSelected && "ring-2 ring-primary",
                   )}
                   onClick={() => onSelectCustomer(customer)}
@@ -181,14 +187,14 @@ export function CustomerStep({
                     </div>
 
                     {customer.phone && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-subheadline text-muted-foreground">
                         Teléfono: {customer.phone}
                       </p>
                     )}
 
                     {isSelected && (
                       <div className="flex items-center gap-2">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-subheadline text-muted-foreground">
                           Direcciones:
                         </p>
                         <CustomerAddressSelect
@@ -292,7 +298,7 @@ export function CustomerStep({
       {mode === "edit" && (
         <Card className="bg-muted/50">
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-subheadline text-muted-foreground text-center">
               💡 Editando pedido existente. El cliente y la dirección ya están
               configurados.
             </p>

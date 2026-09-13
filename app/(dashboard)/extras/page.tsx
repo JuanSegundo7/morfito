@@ -151,7 +151,7 @@ export default function ExtrasPage() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.extras.title}
         subtitle={vertical.labels.pages.extras.subtitle}
@@ -168,19 +168,19 @@ export default function ExtrasPage() {
             }}
           >
             <TabsList className="rounded-full p-1">
-              <TabsTrigger value="all" className="rounded-full px-4 text-sm">
+              <TabsTrigger value="all" className="rounded-full px-4 text-subheadline">
                 Todos
               </TabsTrigger>
-              <TabsTrigger value="extra" className="rounded-full px-4 text-sm">
+              <TabsTrigger value="extra" className="rounded-full px-4 text-subheadline">
                 {categoryLabels.extra}
               </TabsTrigger>
-              <TabsTrigger value="drink" className="rounded-full px-4 text-sm">
+              <TabsTrigger value="drink" className="rounded-full px-4 text-subheadline">
                 {categoryLabels.drink}
               </TabsTrigger>
-              <TabsTrigger value="fries" className="rounded-full px-4 text-sm">
+              <TabsTrigger value="fries" className="rounded-full px-4 text-subheadline">
                 {categoryLabels.fries}
               </TabsTrigger>
-              <TabsTrigger value="sides" className="rounded-full px-4 text-sm">
+              <TabsTrigger value="sides" className="rounded-full px-4 text-subheadline">
                 {categoryLabels.sides}
               </TabsTrigger>
             </TabsList>
@@ -214,7 +214,7 @@ export default function ExtrasPage() {
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <p className="font-medium leading-none">{extra.name}</p>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-caption text-muted-foreground">
                       {extra.category ? categoryLabels[extra.category] : ""}
                     </span>
                   </div>
@@ -224,7 +224,7 @@ export default function ExtrasPage() {
                       {formatCurrency(extra.base_price)}
                     </span>
 
-                    <Badge variant="outline" className="text-xs bg-card">
+                    <Badge variant="outline" className="text-caption bg-card">
                       {extra.is_available ? "Activo" : "Inactivo"}
                     </Badge>
 
@@ -276,7 +276,7 @@ export default function ExtrasPage() {
           >
             ←
           </Button>
-          <span className="text-sm">
+          <span className="text-subheadline">
             {page} / {totalPages}
           </span>
           <Button
@@ -292,7 +292,7 @@ export default function ExtrasPage() {
 
       {/* CREATE / EDIT DIALOG */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="ios-glass rounded-2xl">
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingExtra ? "Editar item" : "Nuevo item"}
@@ -376,7 +376,7 @@ export default function ExtrasPage() {
 
       {/* DELETE DIALOG */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="ios-glass rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar item</AlertDialogTitle>
             <AlertDialogDescription>

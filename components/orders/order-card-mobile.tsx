@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Clock,
   Eye,
@@ -13,6 +14,7 @@ import {
   DollarSign,
   ArrowRight,
   Copy,
+  Timer,
   Pencil,
   Check,
   X,
@@ -24,20 +26,7 @@ import { cn } from "@/lib/utils";
 import { formatOrderForWhatsapp } from "@/lib/utils/formatOrderWhatsapp";
 import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
 import { toast } from "sonner";
-
-const statusConfig = {
-  new: { label: "Nuevo", className: "bg-blue-500 text-white" },
-  ready: { label: "Listo", className: "bg-green-500 text-white" },
-  completed: { label: "Completado", className: "bg-gray-500 text-white" },
-  canceled: { label: "Cancelado", className: "bg-red-500 text-white" },
-};
-
-const statusBorderColor: Record<string, string> = {
-  new: "border-l-blue-500",
-  ready: "border-l-green-500",
-  completed: "border-l-zinc-500",
-  canceled: "border-l-red-500",
-};
+import { statusConfig, statusEdgeStyle } from "@/lib/utils/order-status-style";
 
 interface OrderCardMobileProps {
   order: Order;
@@ -116,19 +105,31 @@ export function OrderCardMobile({
 
   return (
     // ✅ Eliminado "lg:hidden" — lo maneja el wrapper en SortableOrderCard
-    <Card className={cn("bg-card border-l-4", statusBorderColor[status] ?? "border-l-border")}>
-      <CardContent className="space-y-4">
+    <Card interactive className="status-edge p-0" style={statusEdgeStyle[status]}>
+      <CardContent className="p-4 space-y-3">
+        {/* Delivery time banner — en lockstep con order-card.tsx (antes
+            faltaba acá: gap funcional, no solo visual) */}
+        {order.delivery_time && (
+          <div className="flex items-center gap-2 rounded-md bg-[var(--accent-tint-08)] border border-[var(--accent-tint-32)] px-3 py-1.5">
+            <Timer className="h-4 w-4 text-[var(--accent-brand)] shrink-0" />
+            <span className="text-callout font-semibold text-[var(--accent-brand)]">
+              {order.delivery_type === "delivery" ? "Entrega:" : "Retira:"}{" "}
+              {order.delivery_time}
+            </span>
+          </div>
+        )}
+
         {/* HEADER */}
         <div className="flex items-center justify-between">
-          <p className="font-mono text-lg font-semibold">
+          <p className="text-headline vibrant numeric">
             #{order.order_number}
           </p>
 
           <div className="flex items-center gap-2">
             <Button
               size="icon-sm"
-              variant="outline"
-              className="bg-card rounded-full"
+              variant="ghost"
+              className="cursor-pointer rounded-full"
               onClick={handleCopy}
               title="Copiar para WhatsApp"
             >
@@ -137,8 +138,8 @@ export function OrderCardMobile({
 
             <Button
               size="icon-sm"
-              variant="outline"
-              className="bg-card rounded-full"
+              variant="ghost"
+              className="cursor-pointer rounded-full"
               onClick={handleCopyDelivery}
               title="Copiar para delivery"
             >
@@ -148,13 +149,18 @@ export function OrderCardMobile({
             <button
               onClick={handlePaymentToggle}
               className={cn(
-                "rounded-full p-2 transition-colors",
+                "rounded-full p-2.5 transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                 order.is_paid
-                  ? "bg-green-100 text-green-600"
-                  : "bg-red-100 text-red-600",
+                  ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
+                  : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
               )}
+              title={
+                order.is_paid
+                  ? "Pagado - Click para marcar como no pagado"
+                  : "No pagado - Click para marcar como pagado"
+              }
             >
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-5 w-5" />
             </button>
             <Badge className={config.className}>{config.label}</Badge>
           </div>
@@ -162,43 +168,45 @@ export function OrderCardMobile({
 
         {/* META + TOTAL */}
         <div className="flex items-end justify-between gap-4">
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <User className="h-3.5 w-3.5" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-callout vibrant font-medium">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
               {order.customer_name}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 text-footnote text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
-              {getRelativeTime(order.created_at)}
+              <span className="numeric">{getRelativeTime(order.created_at)}</span>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-1">
             {!isEditing ? (
               <div className="flex items-center gap-1.5">
-                <span className="text-xl font-bold font-mono">
+                <span className="text-amount numeric vibrant">
                   {formatCurrency(order.total_amount)}
                 </span>
                 {canEdit && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={handleStartEdit}
                     title="Editar precio y método de pago"
-                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    <Pencil className="h-3 w-3" />
-                  </button>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
             ) : (
               <div className="flex flex-col items-end gap-2">
-                <input
+                <Input
                   type="number"
                   min="0"
                   value={draftAmount}
                   onChange={(e) => setDraftAmount(e.target.value)}
                   onPointerDown={(e) => e.stopPropagation()}
                   autoFocus
-                  className="w-24 h-8 rounded-md border border-input bg-background px-2 text-right text-base font-bold focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-24 h-8 px-2 text-right text-callout font-bold"
                 />
                 <div className="flex gap-1">
                   {(["cash", "transfer"] as const).map((m) => (
@@ -209,7 +217,7 @@ export function OrderCardMobile({
                         setDraftMethod(m);
                       }}
                       className={cn(
-                        "px-2 py-0.5 rounded text-xs font-medium border transition-colors cursor-pointer",
+                        "px-2 py-0.5 rounded text-caption font-medium border transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                         draftMethod === m
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-card text-muted-foreground border-border hover:bg-accent",
@@ -256,7 +264,7 @@ export function OrderCardMobile({
               size="sm"
               onClick={handleSaveEdit}
               disabled={quickPatch.isPending}
-              className="text-green-600 hover:bg-green-50"
+              className="text-[var(--status-paid)] hover:bg-[var(--status-paid-tint)]"
             >
               <Check className="mr-1 h-4 w-4" />
               Guardar
@@ -280,7 +288,7 @@ export function OrderCardMobile({
             <div className="flex items-center justify-between">
               <div>
                 {order.payment_method === "cash" && (
-                  <Badge variant="outline" className="text-xs gap-1 bg-card">
+                  <Badge variant="outline" className="text-caption gap-1 bg-card">
                     💵 Efectivo
                   </Badge>
                 )}

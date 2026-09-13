@@ -12,7 +12,7 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
     >
       <table
         data-slot="table"
-        className={cn('w-full caption-bottom text-sm', className)}
+        className={cn('w-full caption-bottom text-subheadline', className)}
         {...props}
       />
     </div>
@@ -57,7 +57,12 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors',
+        // active:bg-muted/60 en vez de un active:scale -- transform en un
+        // <tr> es poco confiable entre navegadores. Es tambien la razon por
+        // la que esto no necesita guard de reduced-motion: es un cambio de
+        // color, no de transform, y el media query de globals.css ya
+        // preserva justo ese tipo de feedback.
+        'hover:bg-muted/50 active:bg-muted/60 data-[state=selected]:bg-muted border-b transition-colors',
         className,
       )}
       {...props}
@@ -98,7 +103,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn('text-muted-foreground mt-4 text-sm', className)}
+      className={cn('text-muted-foreground mt-4 text-subheadline', className)}
       {...props}
     />
   )

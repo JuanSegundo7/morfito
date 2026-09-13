@@ -26,7 +26,7 @@ export function SelectedBurgerCard({ item }: { item: SelectedBurger }) {
       <CardContent className="p-3 flex justify-between items-center">
         <div>
           <p className="font-medium">{item.burger.name}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-subheadline text-muted-foreground">
             {formatCurrency(item.burger.base_price)}
           </p>
         </div>
@@ -35,7 +35,7 @@ export function SelectedBurgerCard({ item }: { item: SelectedBurger }) {
           <Button size="icon" variant="outline" onClick={() => updateQty(-1)}>
             <Minus className="h-3 w-3" />
           </Button>
-          <span className="w-6 text-center text-sm">{item.quantity}</span>
+          <span className="w-6 text-center text-subheadline">{item.quantity}</span>
           <Button size="icon" variant="outline" onClick={() => updateQty(1)}>
             <Plus className="h-3 w-3" />
           </Button>

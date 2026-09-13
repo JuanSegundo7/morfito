@@ -1,14 +1,11 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { geistMono, pacifico } from "@/lib/fonts";
 import "./globals.css";
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Dishflow",
+  title: "Morfito",
   description: "Sistema de gestión de operaciones para restaurantes",
   generator: "v0.app",
   icons: {
@@ -23,7 +20,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`dark ${geistMono.variable} ${pacifico.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Tema aplicado antes del primer paint. El provider anterior seteaba
+            la clase en un useEffect, lo que flasheaba claro-sobre-oscuro en
+            cada carga. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme')||'dark';document.documentElement.classList.toggle('dark',t!=='light')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="font-sans antialiased min-h-screen">
         {children}
         <Analytics />

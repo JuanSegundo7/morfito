@@ -21,7 +21,7 @@ export interface SelectedSushiItem {
    * per-vertical product type so this plugs directly into the same
    * `availableProducts` list the wizard already fetches via
    * useAvailableProducts() — no new data-fetching hook needed, since one
-   * Dishflow deployment serves exactly one vertical and `products` already
+   * Morfito deployment serves exactly one vertical and `products` already
    * only contains that vertical's own items.
    */
   product: Burger;

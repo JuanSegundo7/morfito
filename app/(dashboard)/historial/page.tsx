@@ -73,6 +73,8 @@ export default function OrdersHistoryPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [orderToReactivate, setOrderToReactivate] = useState<Order | null>(null);
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
 
   const pageSize = 10;
@@ -144,15 +146,27 @@ export default function OrdersHistoryPage() {
     setOrderToCancel(null);
   };
 
+  // Rara, y dispara una re-deduccion de stock invisible para quien la
+  // clickea -- a diferencia de cancelar (que ya confirma) esto no
+  // confirmaba nada. El dialogo existe para explicar esa consecuencia,
+  // no solo para frenar el click (§16.2).
   const handleReactivateOrder = (order: Order) => {
+    setOrderToReactivate(order);
+    setReactivateDialogOpen(true);
+  };
+
+  const confirmReactivateOrder = () => {
+    if (!orderToReactivate) return;
     reactivateOrder.mutate({
-      orderId: order.id,
-      nextStatus: order.is_paid ? "completed" : "new",
+      orderId: orderToReactivate.id,
+      nextStatus: orderToReactivate.is_paid ? "completed" : "new",
     });
+    setReactivateDialogOpen(false);
+    setOrderToReactivate(null);
   };
 
   return (
-    <section className="flex h-full flex-col">
+    <section className="flex flex-1 min-h-0 flex-col">
       <Header
         title="Historial de Pedidos"
         subtitle="Revisa todos los pedidos"
@@ -181,6 +195,7 @@ export default function OrdersHistoryPage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    size="sm"
                     className="h-10 w-55 justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -201,7 +216,7 @@ export default function OrdersHistoryPage() {
                       table: "border-collapse",
                       head_row: "flex gap-2",
                       head_cell:
-                        "w-9 text-muted-foreground font-normal text-sm",
+                        "w-9 text-muted-foreground font-normal text-subheadline",
                       row: "flex gap-2 mt-2",
                       cell: "w-9 h-9 text-center p-0 relative",
                       day: "h-9 w-9 rounded-md hover:bg-accent",
@@ -217,14 +232,14 @@ export default function OrdersHistoryPage() {
 
           <Card className="min-w-50 bg-card">
             <CardContent className="flex items-center justify-between gap-2 p-4">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-subheadline text-muted-foreground">
                 {dateFilter === "today"
                   ? "Ingresos del día"
                   : dateFilter === "week"
                     ? "Ingresos de la semana"
                     : `Ingresos del ${format(customDate, "PPP", { locale: es })}`}
               </span>
-              <span className="text-xl font-bold text-primary">
+              <span className="text-title3 font-bold text-primary">
                 {formatCurrency(totalRevenue)}
               </span>
             </CardContent>
@@ -248,19 +263,19 @@ export default function OrdersHistoryPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Pedido</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Fecha/Hora</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead className="text-overline">Pedido</TableHead>
+                        <TableHead className="text-overline">Cliente</TableHead>
+                        <TableHead className="text-overline">Estado</TableHead>
+                        <TableHead className="text-overline">Total</TableHead>
+                        <TableHead className="text-overline">Fecha/Hora</TableHead>
+                        <TableHead className="text-overline text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedOrders.map((order) => {
                         const config = orderStatusConfig[order.status];
                         return (
-                          <TableRow key={order.id}>
+                          <TableRow key={order.id} className="hover:bg-white/[0.035]">
                             <TableCell className="font-mono font-medium">
                               #{order.order_number}
                             </TableCell>
@@ -270,14 +285,14 @@ export default function OrdersHistoryPage() {
                                 {config.label}
                               </Badge>
                             </TableCell>
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium numeric">
                               {formatCurrency(order.total_amount)}
                             </TableCell>
                             <TableCell className="text-muted-foreground">
                               {formatDateTime(order.created_at)}
                             </TableCell>
                             <TableCell className="flex items-center justify-end gap-2">
-                              <span className={`text-xs font-medium tracking-wide uppercase ${order.payment_method === "cash" ? "text-emerald-600" : "text-blue-600"}`}>
+                              <span className={`text-overline uppercase ${order.payment_method === "cash" ? "text-emerald-600" : "text-blue-600"}`}>
                                 {order.payment_method === "cash" ? "Efectivo" : "Transferencia"}
                               </span>
                               <span className="text-border select-none">|</span>
@@ -339,7 +354,7 @@ export default function OrdersHistoryPage() {
                 {/* 👉 Controles de paginación */}
                 {orders.length > pageSize && (
                   <div className="flex items-center justify-between border-t pt-4">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-subheadline text-muted-foreground">
                       Mostrando {page * pageSize + 1}–
                       {Math.min((page + 1) * pageSize, orders.length)} de{" "}
                       {orders.length} pedidos
@@ -355,7 +370,7 @@ export default function OrdersHistoryPage() {
                         <ChevronLeft className="h-4 w-4" />
                         Anterior
                       </Button>
-                      <span className="text-sm font-medium">
+                      <span className="text-subheadline font-medium">
                         Página {page + 1} de{" "}
                         {Math.ceil(orders.length / pageSize)}
                       </span>
@@ -405,6 +420,26 @@ export default function OrdersHistoryPage() {
               className="bg-red-600 hover:bg-red-700"
             >
               Cancelar pedido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={reactivateDialogOpen} onOpenChange={setReactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              ¿Reactivar el pedido #{orderToReactivate?.order_number}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Vuelve al estado "{orderToReactivate?.is_paid ? "Completado" : "Nuevo"}".
+              Se volverá a descontar el stock de los insumos usados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReactivateOrder}>
+              Reactivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

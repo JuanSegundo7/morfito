@@ -12,16 +12,20 @@ interface ThemeContextType {
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
 
+// El script bloqueante en <head> (app/layout.tsx) ya setea la clase "dark"
+// en <html> antes del primer paint. Leerla acá evita el flash claro-sobre-
+// oscuro que causaba defaultear a "dark" y corregir en un efecto.
+function getInitialTheme(): Theme {
+  if (typeof document === "undefined") return "dark"
+  return document.documentElement.classList.contains("dark") ? "dark" : "light"
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>("dark")
+  const [theme, setThemeState] = React.useState<Theme>(getInitialTheme)
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
-    const stored = localStorage.getItem("theme") as Theme | null
-    const resolved = stored ?? "dark"
-    setThemeState(resolved)
-    document.documentElement.classList.toggle("dark", resolved === "dark")
   }, [])
 
   const setTheme = React.useCallback((newTheme: Theme) => {

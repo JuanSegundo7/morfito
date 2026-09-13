@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Clock,
   Eye,
@@ -13,6 +14,7 @@ import {
   DollarSign,
   Edit,
   ArrowRight,
+  ArrowLeft,
   Copy,
   Timer,
   Pencil,
@@ -26,20 +28,7 @@ import { cn } from "@/lib/utils";
 import { formatOrderForWhatsapp } from "@/lib/utils/formatOrderWhatsapp";
 import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
 import { toast } from "sonner";
-
-const statusConfig = {
-  new: { label: "Nuevo", className: "bg-blue-500 text-white" },
-  ready: { label: "Listo", className: "bg-green-500 text-white" },
-  completed: { label: "Completado", className: "bg-gray-500 text-white" },
-  canceled: { label: "Cancelado", className: "bg-red-500 text-white" },
-};
-
-const statusBorderColor: Record<string, string> = {
-  new: "border-l-blue-500",
-  ready: "border-l-green-500",
-  completed: "border-l-zinc-500",
-  canceled: "border-l-red-500",
-};
+import { statusConfig, statusEdgeStyle } from "@/lib/utils/order-status-style";
 
 interface OrderCardProps {
   order: Order;
@@ -48,6 +37,7 @@ interface OrderCardProps {
   isDragging?: boolean;
   visualStatus?: Order["status"];
   onChangeStatus?: (order: Order) => void;
+  onMoveBack?: (order: Order) => void;
 }
 
 export function OrderCard({
@@ -56,6 +46,7 @@ export function OrderCard({
   onEditOrder,
   isDragging,
   onChangeStatus,
+  onMoveBack,
   visualStatus = order.status,
 }: OrderCardProps) {
   const canEdit = order.status === "new" || order.status === "ready";
@@ -119,22 +110,21 @@ export function OrderCard({
   const status = visualStatus ?? order.status;
   const config = statusConfig[status as keyof typeof statusConfig];
 
-  console.log(order);
-
   return (
     <Card
+      interactive
       className={cn(
-        "transition-all hover:shadow-md cursor-grab bg-card border-l-4",
-        statusBorderColor[status] ?? "border-l-border",
-        isDragging && "rotate-1",
+        "status-edge cursor-grab p-0",
+        isDragging && "opacity-40 saturate-50 shadow-none transition-none",
       )}
+      style={statusEdgeStyle[status]}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-3">
         {/* Delivery time banner — shown at the very top when available */}
         {order.delivery_time && (
-          <div className="flex items-center gap-2 mb-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-1.5">
-            <Timer className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-2 rounded-md bg-[var(--accent-tint-08)] border border-[var(--accent-tint-32)] px-3 py-1.5">
+            <Timer className="h-4 w-4 text-[var(--accent-brand)] shrink-0" />
+            <span className="text-callout font-semibold text-[var(--accent-brand)]">
               {order.delivery_type === "delivery" ? "Entrega:" : "Retira:"}{" "}
               {order.delivery_time}
             </span>
@@ -142,14 +132,14 @@ export function OrderCard({
         )}
 
         {/* Header: order number + time ago + status badge + payment */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <p className="font-mono text-lg font-semibold">
+            <p className="text-headline vibrant numeric">
               #{order.order_number}
             </p>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-footnote text-muted-foreground">
               <Clock className="h-4 w-4" />
-              <span>{getRelativeTime(order.created_at)}</span>
+              <span className="numeric">{getRelativeTime(order.created_at)}</span>
             </div>
           </div>
 
@@ -176,10 +166,10 @@ export function OrderCard({
             <button
               onClick={handlePaymentToggle}
               className={cn(
-                "rounded-full p-2 transition-colors cursor-pointer",
+                "rounded-full p-2.5 transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                 order.is_paid
-                  ? "bg-green-100 text-green-600 hover:bg-green-200"
-                  : "bg-red-100 text-red-600 hover:bg-red-200",
+                  ? "bg-[var(--status-paid-tint)] text-[var(--status-paid)] hover:brightness-110"
+                  : "bg-[var(--accent-tint-16)] text-[var(--accent-brand)] hover:bg-[var(--accent-tint-32)]",
               )}
               title={
                 order.is_paid
@@ -187,44 +177,46 @@ export function OrderCard({
                   : "No pagado - Click para marcar como pagado"
               }
             >
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-5 w-5" />
             </button>
           </div>
         </div>
 
         {/* Customer name */}
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-          <User className="h-4 w-4" />
-          <span>{order.customer_name}</span>
+        <div className="flex items-center gap-1.5">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="text-callout vibrant font-medium">{order.customer_name}</span>
         </div>
 
         {/* Footer: total + actions */}
         <div className="flex items-center justify-between pt-3 border-t">
           {!isEditing ? (
             <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold font-mono">
+              <p className="text-amount numeric vibrant">
                 {formatCurrency(order.total_amount)}
               </p>
               {canEdit && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={handleStartEdit}
                   title="Editar precio y método de pago"
-                  className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
+                  <Pencil className="h-4 w-4" />
+                </Button>
               )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <input
+              <Input
                 type="number"
                 min="0"
                 value={draftAmount}
                 onChange={(e) => setDraftAmount(e.target.value)}
                 onPointerDown={(e) => e.stopPropagation()}
                 autoFocus
-                className="w-28 h-8 rounded-md border border-input bg-background px-2 text-lg font-bold focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-28 h-8 px-2 text-headline font-bold"
               />
               <div className="flex gap-1.5">
                 {(["cash", "transfer"] as const).map((m) => (
@@ -235,7 +227,7 @@ export function OrderCard({
                       setDraftMethod(m);
                     }}
                     className={cn(
-                      "px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer",
+                      "px-2.5 py-1 rounded-md text-caption font-medium border transition-colors active:scale-[0.97] active:duration-75 cursor-pointer",
                       draftMethod === m
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card text-muted-foreground border-border hover:bg-accent",
@@ -276,48 +268,74 @@ export function OrderCard({
             </div>
           ) : (
             <div className="flex items-center gap-1.5 self-start">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleSaveEdit}
                 disabled={quickPatch.isPending}
-                className="p-1.5 rounded text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50 cursor-pointer"
+                className="text-[var(--status-paid)] hover:bg-[var(--status-paid-tint)]"
               >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
+                <Check className="mr-1 h-4 w-4" />
+                Guardar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleCancelEdit}
-                className="p-1.5 rounded text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                className="text-destructive hover:bg-destructive/10"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X className="mr-1 h-4 w-4" />
+                Cancelar
+              </Button>
             </div>
           )}
         </div>
 
         {/* Status advance button */}
         {!isEditing && (
-          <div className="mt-3 w-full flex items-center justify-between">
-            <div>
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-2">
               {order.payment_method === "cash" && (
-                <Badge variant="outline" className="text-xs gap-1 bg-card">
+                <Badge variant="outline" className="text-caption gap-1 bg-card">
                   💵 Efectivo
                 </Badge>
               )}
             </div>
-            {onChangeStatus &&
-              (order.status === "new" || order.status === "ready") && (
+            <div className="flex items-center gap-1.5">
+              {/* Unico camino de vuelta que el drag permite (listo->nuevo).
+                  Sin esto, alguien sin mouse/sin poder arrastrar no tenia
+                  forma de deshacer ese paso -- el boton de avance solo
+                  sirve para ir hacia adelante. */}
+              {onMoveBack && order.status === "ready" && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="cursor-pointer bg-card"
+                  className="cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChangeStatus(order);
+                    onMoveBack(order);
                   }}
                 >
-                  <ArrowRight className="mr-1.5 h-4 w-4" />
-                  {order.status === "new" ? "Listo" : "Completar"}
+                  <ArrowLeft className="mr-1.5 h-4 w-4" />
+                  Volver a Nuevos
                 </Button>
               )}
+              {onChangeStatus &&
+                (order.status === "new" || order.status === "ready") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer bg-card"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChangeStatus(order);
+                    }}
+                  >
+                    <ArrowRight className="mr-1.5 h-4 w-4" />
+                    {order.status === "new" ? "Listo" : "Completar"}
+                  </Button>
+                )}
+            </div>
           </div>
         )}
       </CardContent>

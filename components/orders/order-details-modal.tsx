@@ -90,7 +90,7 @@ export function OrderDetailsModal({
         <DialogHeader>
           <div className="flex items-center justify-between p-2">
             <div className="flex items-center gap-3">
-              <DialogTitle className="font-mono text-xl">
+              <DialogTitle className="font-mono text-title3">
                 Pedido #{order?.order_number}
               </DialogTitle>
               {config && (
@@ -125,7 +125,7 @@ export function OrderDetailsModal({
 
             {/* Horario — arriba del cliente, abajo del número de pedido */}
             {orderWithItems.delivery_time && (
-              <div className="flex items-center gap-2 text-sm font-medium text-primary bg-primary/10 px-3 py-2 rounded-md">
+              <div className="flex items-center gap-2 text-subheadline font-medium text-primary bg-primary/10 px-3 py-2 rounded-md">
                 <Clock className="h-4 w-4" />
                 <span>
                   {orderWithItems.delivery_type === "delivery"
@@ -140,20 +140,20 @@ export function OrderDetailsModal({
 
             {/* Cliente Info */}
             <div className="rounded-lg bg-secondary/50 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
+              <div className="flex items-center gap-2 text-subheadline font-medium">
                 <User className="h-4 w-4 text-muted-foreground" />
                 {orderWithItems.customer_name}
               </div>
 
               {orderWithItems.customer?.phone && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-caption text-muted-foreground">
                   <Phone className="h-4 w-4" />
                   <span>{orderWithItems.customer.phone}</span>
                 </div>
               )}
 
               {orderWithItems.customer_address && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-caption text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   <span>
                     {orderWithItems.customer_address.label} -{" "}
@@ -162,7 +162,7 @@ export function OrderDetailsModal({
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-caption text-muted-foreground">
                 {orderWithItems.delivery_type === "delivery" ? (
                   <>
                     <Car className="h-4 w-4" />
@@ -176,7 +176,7 @@ export function OrderDetailsModal({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-caption text-muted-foreground">
                 <span>
                   {orderWithItems.payment_method === "cash"
                     ? "💵 - Efectivo"
@@ -213,11 +213,11 @@ export function OrderDetailsModal({
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <p className="font-semibold text-base">
+                          <p className="font-semibold text-callout">
                             {item.quantity}x {item.burger_name}
                           </p>
                         </div>
-                        <p className="font-bold text-lg">
+                        <p className="font-bold text-headline">
                           {formatCurrency(item.subtotal)}
                         </p>
                       </div>
@@ -233,11 +233,11 @@ export function OrderDetailsModal({
                               >
                                 {slot.burgers.map((burger, burgerIndex) => (
                                   <div key={burgerIndex} className="mb-3">
-                                    <p className="font-medium text-sm">
+                                    <p className="font-medium text-subheadline">
                                       {burger.quantity}x {burger.name}
                                     </p>
 
-                                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                    <div className="mt-1 space-y-0.5 text-caption text-muted-foreground">
                                       {(burger as any).isVeggie && (
                                         <p>• 🌱 Veggie</p>
                                       )}
@@ -307,11 +307,11 @@ export function OrderDetailsModal({
 
                                     return extras.map((se, i) => (
                                       <div key={se.id ?? i} className="mb-2">
-                                        <p className="font-medium text-sm">
+                                        <p className="font-medium text-subheadline">
                                           {meta.icon} {meta.label}: {se.name}
                                         </p>
                                         {se.price > 0 && (
-                                          <p className="text-xs text-muted-foreground">
+                                          <p className="text-caption text-muted-foreground">
                                             +{formatCurrency(se.price)}
                                           </p>
                                         )}
@@ -334,7 +334,7 @@ export function OrderDetailsModal({
 
                               if (!singleData)
                                 return (
-                                  <p className="mt-2 text-sm text-muted-foreground">
+                                  <p className="mt-2 text-subheadline text-muted-foreground">
                                     {item.customizations}
                                   </p>
                                 );
@@ -349,7 +349,7 @@ export function OrderDetailsModal({
                                       : `${singleData.meatCount} carnes`;
 
                               return (
-                                <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                                <div className="mt-2 space-y-0.5 text-caption text-muted-foreground">
                                   <p>• {sizeLabel}</p>
                                   {singleData.isVeggie && (
                                     <p>• 🌱 Veggie</p>
@@ -395,7 +395,7 @@ export function OrderDetailsModal({
                           {item.extras.map((extra) => (
                             <div
                               key={extra.id}
-                              className="flex justify-between text-sm"
+                              className="flex justify-between text-subheadline"
                             >
                               <span className="text-muted-foreground">
                                 + {extra.quantity}x {extra.name_snapshot}
@@ -415,7 +415,7 @@ export function OrderDetailsModal({
 
             {/* Costos adicionales */}
             {orderWithItems.delivery_fee > 0 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-subheadline">
                 <span className="text-muted-foreground">Envío</span>
                 <span className="font-medium">
                   {formatCurrency(orderWithItems.delivery_fee)}
@@ -424,7 +424,7 @@ export function OrderDetailsModal({
             )}
 
             {orderWithItems.discount_amount > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
+              <div className="flex justify-between text-subheadline text-green-600">
                 <span>
                   Descuento
                   {orderWithItems.discount_type === "percentage" &&
@@ -449,7 +449,7 @@ export function OrderDetailsModal({
                     ?.label ?? orderWithItems.source)
                 : null;
               return (
-                <div className="flex justify-between text-sm text-orange-600">
+                <div className="flex justify-between text-subheadline text-orange-600">
                   <span>
                     Comisión
                     {(sourceLabel || orderWithItems.commission_rate > 0) &&
@@ -469,7 +469,7 @@ export function OrderDetailsModal({
                 is a legitimate, displayable value here, own line, never
                 folded into the discount line. */}
             {orderWithItems.price_adjustment !== 0 && (
-              <div className="flex justify-between text-sm text-blue-600">
+              <div className="flex justify-between text-subheadline text-blue-600">
                 <span>Ajuste de precio</span>
                 <span className="font-medium">
                   {orderWithItems.price_adjustment > 0 ? "+" : "-"}
@@ -482,8 +482,8 @@ export function OrderDetailsModal({
 
             {/* Total */}
             <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold">Total</span>
-              <span className="text-2xl font-bold text-primary">
+              <span className="text-headline">Total</span>
+              <span className="text-amount text-primary">
                 {formatCurrency(orderWithItems.total_amount)}
               </span>
             </div>
@@ -494,7 +494,7 @@ export function OrderDetailsModal({
                 <Separator />
                 <div>
                   <h3 className="mb-2 font-semibold">Notas</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-subheadline text-muted-foreground">
                     {orderWithItems.notes}
                   </p>
                 </div>

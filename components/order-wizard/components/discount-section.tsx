@@ -26,7 +26,7 @@ export function DiscountSection({
     <Card>
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Descuento</h3>
+          <h3 className="text-subheadline font-medium">Descuento</h3>
           {discountType !== "none" && (
             <Button
               type="button"
@@ -36,7 +36,7 @@ export function DiscountSection({
                 onDiscountTypeChange("none");
                 onDiscountValueChange(0);
               }}
-              className="h-7 text-xs text-muted-foreground hover:text-destructive"
+              className="h-7 text-caption text-muted-foreground hover:text-destructive"
             >
               <X className="h-3 w-3 mr-1" />
               Quitar
@@ -91,24 +91,24 @@ export function DiscountSection({
                 onChange={(e) => onDiscountValueChange(Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="text-sm text-muted-foreground w-8">
+              <span className="text-subheadline text-muted-foreground w-8">
                 {discountType === "percentage" ? "%" : "$"}
               </span>
             </div>
 
             {/* Preview del descuento */}
             {discountValue > 0 && (
-              <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md p-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-green-900 dark:text-green-100">
+              <div className="bg-[var(--status-paid-tint)] border border-[var(--status-paid)]/30 rounded-md p-3">
+                <div className="flex justify-between items-center text-subheadline">
+                  <span className="text-[var(--status-paid)]">
                     Descuento aplicado:
                   </span>
-                  <span className="font-semibold text-green-700 dark:text-green-300">
+                  <span className="font-semibold text-[var(--status-paid)]">
                     -{formatCurrency(discountAmount)}
                   </span>
                 </div>
                 {discountType === "percentage" && (
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  <p className="text-caption text-[var(--status-paid)]/80 mt-1">
                     {discountValue}% de {formatCurrency(subtotal)}
                   </p>
                 )}

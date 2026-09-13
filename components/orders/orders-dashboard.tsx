@@ -24,12 +24,23 @@ import {
 import {
   DndContext,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type Announcements,
+  type ScreenReaderInstructions,
+  type CollisionDetection,
+  type KeyboardCoordinateGetter,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
+  KeyboardCode,
+  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { OrderCard } from "./order-card";
+import { motion, useReducedMotion } from "framer-motion";
+import { useSpring, easeOutIOS } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -42,11 +53,47 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useOrderForEdit } from "@/lib/hooks/orders/use-order-for-edit";
-import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { OrderStatus } from "@/lib/types";
 
+// Glow del DragOverlay en el color de estado de la tarjeta que se está
+// arrastrando (mismo mapeo que order-card.tsx / order-column.tsx).
+const statusGlowVar: Record<string, string> = {
+  new: "var(--status-new)",
+  ready: "var(--status-ready)",
+  completed: "var(--status-completed)",
+  canceled: "var(--status-canceled)",
+};
+
+const statusColumnLabel: Record<string, string> = {
+  new: "Nuevos",
+  ready: "Listos",
+};
+
+// Sin esto, closestCorners/rectIntersection puede resolver `over` a OTRA
+// CARD (cada useSortable registra su propio droppable) en vez de a la
+// columna -- el guard de handleDragEnd lo rechaza en silencio, tanto con
+// mouse (soltar encima de una card) como con teclado (ver kanbanCoordinate-
+// Getter mas abajo). Restringir a solo new/ready arregla ambos con un
+// solo cambio. Aplica a los dos sensores: el bug de "soltar encima de una
+// card" con mouse es preexistente, no algo nuevo que introduce el teclado.
+const columnsOnlyCollisionDetection: CollisionDetection = (args) => {
+  const columns = args.droppableContainers.filter(
+    (c) => c.id === "new" || c.id === "ready",
+  );
+  return closestCenter({ ...args, droppableContainers: columns });
+};
+
+// dnd-kit trae sus propios textos default (ingles, semantica generica de
+// "sortable") -- ni el idioma ni el vocabulario calzan con este tablero.
+const screenReaderInstructions: ScreenReaderInstructions = {
+  draggable:
+    "Para levantar un pedido, presioná la barra espaciadora. " +
+    "Mientras lo arrastrás, usá las flechas para moverlo entre columnas. " +
+    "Presioná espacio de nuevo para soltarlo, o escape para cancelar.",
+};
+
 export function OrdersDashboard() {
-  const queryClient = useQueryClient();
   const { data: orders, isLoading, refetch, isRefetching } = useOrders();
   const { data: todayCount } = useTodayOrdersCount();
   const updateStatus = useUpdateOrderStatus();
@@ -61,12 +108,24 @@ export function OrdersDashboard() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  // Estado de la columna sobre la que se sostiene el drag ahora mismo — no
+  // el estado original de la card. Alimenta visualStatus del DragOverlay
+  // para que el borde de luz cambie de color ANTES de soltar (§13:
+  // causalidad real, no decorativa).
+  const [overStatus, setOverStatus] = useState<OrderStatus | null>(null);
+  // Punto donde se agarró la card, en % relativos a su propio rect — ancla
+  // el transform-origin del DragOverlay (§7: el lift tiene que originarse
+  // donde tocó el dedo, no en el centro abstracto de la card).
+  const [dragOrigin, setDragOrigin] = useState("50% 50%");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
+  // Explicito en vez de depender solo del efecto lateral de MotionConfig
+  // reducedMotion="user" (que igual apaga scale/rotate gratis): bajo
+  // reduced motion el lift no debe escalar ni rotar, pero necesita seguir
+  // transmitiendo "esto se esta moviendo" -- un settle de opacidad, no nada.
+  const reducedMotion = useReducedMotion();
+  const liftTransition = useSpring("lift");
 
   useEffect(() => {
     if (orderToEdit && orderIdToEdit) {
@@ -82,13 +141,89 @@ export function OrdersDashboard() {
     return a.delivery_time.localeCompare(b.delivery_time);
   });
 
-  const handleDragStart = (event: any) => {
+  // Referencia al numero de pedido, no al UUID crudo que dnd-kit da como
+  // active.id -- "se movio el pedido a3f9e2d1..." no le sirve a nadie
+  // escuchando con lector de pantalla.
+  const orderLabel = (id: string) => {
+    const order = sortedOrders.find((o) => o.id === id);
+    return order ? `pedido #${order.order_number}` : "el pedido";
+  };
+
+  // Izquierda/derecha = "anda a la otra columna" (da lo mismo cual tecla,
+  // solo hay 2 destinos posibles). Arriba/abajo no tienen significado en
+  // este tablero -- no se reordena nunca dentro de una columna, asi que
+  // devolver undefined (sin mover) es lo correcto, no una limitacion.
+  // sortableKeyboardCoordinates de @dnd-kit/sortable NO sirve aca: considera
+  // TODOS los droppables habilitados (columnas Y cada card individual), asi
+  // que con flecha derecha lo mas probable es que salte a otra CARD en vez
+  // de a la columna -- el mismo problema que columnsOnlyCollisionDetection
+  // arregla arriba, pero el coordinateGetter necesita su propia logica para
+  // apuntar directo al centro de la columna destino.
+  const kanbanCoordinateGetter: KeyboardCoordinateGetter = (event, { context }) => {
+    const isHorizontal = event.code === KeyboardCode.Left || event.code === KeyboardCode.Right;
+    const isVertical = event.code === KeyboardCode.Up || event.code === KeyboardCode.Down;
+    if (!isHorizontal && !isVertical) return undefined;
+    event.preventDefault(); // no dejar que la pagina scrollee mientras hay una card levantada
+    if (!isHorizontal) return undefined;
+
+    const overId = context.over?.id;
+    const currentStatus =
+      overId === "new" || overId === "ready"
+        ? overId
+        : sortedOrders.find((o) => o.id === context.active?.id)?.status;
+    const target = currentStatus === "ready" ? "new" : "ready";
+
+    const rect = context.droppableRects.get(target);
+    if (!rect) return undefined;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: kanbanCoordinateGetter }),
+  );
+
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Se levantó ${orderLabel(String(active.id))}.`,
+    onDragOver: ({ active, over }) =>
+      over
+        ? `${orderLabel(String(active.id))} está sobre la columna ${statusColumnLabel[String(over.id)] ?? over.id}.`
+        : `${orderLabel(String(active.id))} ya no está sobre una columna.`,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? `${orderLabel(String(active.id))} se movió a la columna ${statusColumnLabel[String(over.id)] ?? over.id}.`
+        : `${orderLabel(String(active.id))} se soltó sin moverse de columna.`,
+    onDragCancel: ({ active }) =>
+      `Se canceló el arrastre. ${orderLabel(String(active.id))} volvió a su lugar.`,
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
     const order = sortedOrders.find((o) => o.id === event.active.id);
     setActiveOrder(order || null);
+    setOverStatus(null);
+
+    // Origen del transform anclado a donde se agarró la card (§7) — no al
+    // centro. rect es el bounding box inicial de la card; activatorEvent
+    // es el pointer/mouse event nativo que arrancó el drag.
+    const rect = event.active.rect.current.initial;
+    const activatorEvent = event.activatorEvent;
+    if (rect && "clientX" in activatorEvent) {
+      const { clientX, clientY } = activatorEvent as PointerEvent;
+      const x = ((clientX - rect.left) / rect.width) * 100;
+      const y = ((clientY - rect.top) / rect.height) * 100;
+      setDragOrigin(`${x}% ${y}%`);
+    } else {
+      setDragOrigin("50% 50%");
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverStatus(event.over ? (event.over.id as OrderStatus) : null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setOverStatus(null);
 
     if (!over) {
       setActiveOrder(null);
@@ -97,22 +232,39 @@ export function OrdersDashboard() {
 
     const orderId = active.id as string;
     const newStatus = over.id as OrderStatus;
+    const previousStatus = activeOrder?.status;
 
-    queryClient.setQueryData<Order[]>(["orders"], (old) => {
-      if (!old) return old;
-      return old.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: newStatus,
-              updated_at: new Date().toISOString(),
-            }
-          : order,
-      );
-    });
+    // Columnas y cards estan registradas como droppables en dnd-kit; si la
+    // deteccion de colision alguna vez resuelve `over` a una card en vez de
+    // a una columna, over.id seria un UUID, no un OrderStatus. Guard barato
+    // para que ese "as" no escriba basura en orders.status.
+    if (newStatus !== "new" && newStatus !== "ready") {
+      setActiveOrder(null);
+      return;
+    }
 
     setActiveOrder(null);
-    updateStatus.mutate({ orderId, status: newStatus });
+    // Undo solo en el sentido "hacia atras" (listo->nuevo). nuevo->listo
+    // es el flujo normal de alta frecuencia y se queda silencioso -- listo->
+    // nuevo es rara y casi siempre un arrastre accidental, ahi si vale un
+    // toast con Deshacer.
+    updateStatus.mutate(
+      { orderId, status: newStatus },
+      {
+        onSuccess: () => {
+          if (previousStatus === "ready" && newStatus === "new") {
+            toast("Pedido movido a Nuevos", {
+              duration: 8000,
+              action: {
+                label: "Deshacer",
+                onClick: () =>
+                  updateStatus.mutate({ orderId, status: previousStatus }),
+              },
+            });
+          }
+        },
+      },
+    );
   };
 
   const handleCompleteOrder = (order: Order) => {
@@ -159,6 +311,16 @@ export function OrdersDashboard() {
       updateStatus.mutate({ orderId: order.id, status: "ready" });
     } else if (order.status === "ready") {
       handleCompleteOrder(order);
+    }
+  };
+
+  // El unico movimiento hacia atras que el drag permite (listo->nuevo) no
+  // tenia contraparte de boton -- era el hueco real del acceso por teclado,
+  // no la ausencia de un KeyboardSensor. Con esto el tablero queda 100%
+  // operable sin arrastrar, y de paso le sirve a cualquiera con mouse.
+  const handleMoveBack = (order: Order) => {
+    if (order.status === "ready") {
+      updateStatus.mutate({ orderId: order.id, status: "new" });
     }
   };
 
@@ -213,8 +375,11 @@ export function OrdersDashboard() {
             <div className="flex-1 min-h-0 flex h-full">
               <DndContext
                 sensors={sensors}
+                collisionDetection={columnsOnlyCollisionDetection}
                 onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
+                accessibility={{ announcements, screenReaderInstructions }}
               >
                 <div className="flex-1 min-h-0">
                   {/* Mobile: tabs */}
@@ -223,30 +388,30 @@ export function OrdersDashboard() {
                       <button
                         onClick={() => setActiveTab("new")}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors active:scale-[0.97] active:duration-75",
                           activeTab === "new"
                             ? "border-primary text-foreground"
                             : "border-transparent text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <span className="h-2 w-2 rounded-full bg-blue-500" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--status-new)]" />
                         Nuevos
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-caption">
                           {sortedOrders.filter((o) => o.status === "new").length}
                         </span>
                       </button>
                       <button
                         onClick={() => setActiveTab("ready")}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                          "flex items-center gap-2 px-4 py-2 text-subheadline font-medium border-b-2 transition-colors active:scale-[0.97] active:duration-75",
                           activeTab === "ready"
                             ? "border-primary text-foreground"
                             : "border-transparent text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--status-ready)]" />
                         Listos
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-caption">
                           {sortedOrders.filter((o) => o.status === "ready").length}
                         </span>
                       </button>
@@ -260,7 +425,7 @@ export function OrdersDashboard() {
                           onViewDetails={(o) => { setSelectedOrder(o); setDetailsOpen(true); }}
                           onEditOrder={handleEditOrder}
                           onChangeStatus={handleChangeStatus}
-                          accentColor="bg-blue-500"
+                          onMoveBack={handleMoveBack}
                         />
                       ) : (
                         <OrderColumn
@@ -270,7 +435,7 @@ export function OrdersDashboard() {
                           onViewDetails={(o) => { setSelectedOrder(o); setDetailsOpen(true); }}
                           onEditOrder={handleEditOrder}
                           onChangeStatus={handleChangeStatus}
-                          accentColor="bg-green-500"
+                          onMoveBack={handleMoveBack}
                         />
                       )}
                     </div>
@@ -288,7 +453,7 @@ export function OrdersDashboard() {
                       }}
                       onEditOrder={handleEditOrder}
                       onChangeStatus={handleChangeStatus}
-                      accentColor="bg-blue-500"
+                      onMoveBack={handleMoveBack}
                     />
                     <OrderColumn
                       title="Listos"
@@ -300,33 +465,53 @@ export function OrdersDashboard() {
                       }}
                       onEditOrder={handleEditOrder}
                       onChangeStatus={handleChangeStatus}
-                      accentColor="bg-green-500"
+                      onMoveBack={handleMoveBack}
                     />
                   </div>
                 </div>
 
-                <DragOverlay adjustScale={false}>
+                <DragOverlay
+                  adjustScale={false}
+                  dropAnimation={{
+                    duration: reducedMotion ? 160 : 260,
+                    easing: `cubic-bezier(${easeOutIOS.join(",")})`,
+                  }}
+                >
                   {activeOrder ? (
-                    <div className="pointer-events-none ">
+                    // will-change: transform va SOLO acá (§11) — es lo único
+                    // que se mueve a cada frame del drag.
+                    <motion.div
+                      className="pointer-events-none rounded-2xl"
+                      style={{
+                        willChange: "transform",
+                        transformOrigin: dragOrigin,
+                        boxShadow: `var(--shadow-xl), 0 0 28px -6px ${
+                          statusGlowVar[overStatus ?? activeOrder.status] ?? "var(--status-new)"
+                        }`,
+                      }}
+                      initial={reducedMotion ? { opacity: 0.6 } : { scale: 1, rotate: 0 }}
+                      animate={reducedMotion ? { opacity: 1 } : { scale: 1.03, rotate: -1 }}
+                      transition={liftTransition}
+                    >
                       <OrderCard
                         order={activeOrder}
-                        visualStatus={activeOrder.status}
+                        visualStatus={overStatus ?? activeOrder.status}
                         onViewDetails={() => {}}
                       />
-                    </div>
+                    </motion.div>
                   ) : null}
                 </DragOverlay>
               </DndContext>
             </div>
           ) : (
             <div className="flex h-full flex-col items-center justify-center">
-              <div className="rounded-full bg-muted p-4">
+              <div className="rounded-full material-thin p-4">
                 <ClipboardList className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">
-                Sin pedidos activos
+              <h3 className="mt-4 text-headline">
+                Todo tranquilo por acá
               </h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-footnote text-muted-foreground">
                 Los nuevos pedidos aparecerán aquí
               </p>
             </div>
@@ -335,9 +520,9 @@ export function OrdersDashboard() {
       </div>
 
       {/* FOOTER */}
-      <div className="border border-border rounded-md bg-card p-4 min-h-17.5 shrink-0">
+      <div className="material-regular rounded-2xl p-4 min-h-17.5 shrink-0">
         <div className="flex h-full items-center justify-between gap-4">
-          <div className="text-sm shrink-0">
+          <div className="text-subheadline shrink-0">
             <span className="text-muted-foreground">
               Total pedidos del día:{" "}
             </span>
@@ -346,7 +531,7 @@ export function OrdersDashboard() {
 
           {readyOrders.length > 0 && (
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm text-muted-foreground shrink-0">
+              <span className="text-subheadline text-muted-foreground shrink-0">
                 Pedidos listos:
               </span>
               {readyOrders.length >= 4 && (
@@ -356,7 +541,7 @@ export function OrdersDashboard() {
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Usá la ruedita del mouse para ver más pedidos</p>
+                      <p className="text-caption">Usá la ruedita del mouse para ver más pedidos</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -368,7 +553,7 @@ export function OrdersDashboard() {
                       key={order.id}
                       size="sm"
                       onClick={() => handleCompleteOrder(order)}
-                      className="bg-green-600 hover:bg-green-700 shrink-0 whitespace-nowrap"
+                      className="bg-[var(--status-ready)] text-white hover:brightness-110 shrink-0 whitespace-nowrap"
                     >
                       <Check className="mr-1 h-4 w-4" />
                       Completar #{order.order_number}

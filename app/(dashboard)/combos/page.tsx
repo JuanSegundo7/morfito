@@ -187,7 +187,7 @@ export default function CombosPage() {
   /* ---------- UI ---------- */
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.combos.title}
         subtitle={vertical.labels.pages.combos.subtitle}
@@ -220,14 +220,14 @@ export default function CombosPage() {
               <Card
                 key={combo.id}
                 className={cn(
-                  "group  transition-all bg-card",
+                  "group bg-card",
                   !combo.is_available && "opacity-50",
                 )}
               >
                 <CardContent className="flex items-center justify-between p-4">
                   <div>
                     <p className="font-medium">{combo.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-subheadline text-muted-foreground">
                       {formatCurrency(combo.price)}
                     </p>
                   </div>
@@ -272,7 +272,7 @@ export default function CombosPage() {
 
       {/* ---------- CREATE / EDIT ---------- */}
       <Dialog open={dialogOpen} onOpenChange={(o) => !o && closeDialog()}>
-        <DialogContent className="ios-glass rounded-2xl w-full max-w-2xl!">
+        <DialogContent className="rounded-2xl w-full max-w-2xl!">
           <DialogHeader>
             <DialogTitle>
               {editing ? "Editar combo" : "Nuevo combo"}
@@ -302,7 +302,7 @@ export default function CombosPage() {
 
             {/* Estructura */}
             <div className="border rounded-xl p-4 space-y-4">
-              <p className="text-sm font-medium">Estructura del combo</p>
+              <p className="text-subheadline font-medium">Estructura del combo</p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -319,7 +319,7 @@ export default function CombosPage() {
                       })
                     }
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-caption text-muted-foreground">
                     Cuántas hamburguesas incluye
                   </p>
                 </div>
@@ -339,7 +339,7 @@ export default function CombosPage() {
                       })
                     }
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-caption text-muted-foreground">
                     1=simple, 2=doble, 3=triple
                   </p>
                 </div>
@@ -367,7 +367,7 @@ export default function CombosPage() {
                 </div>
                 {form.include_drink && (
                   <div className="ml-10 space-y-1">
-                    <Label className="text-xs text-muted-foreground">
+                    <Label className="text-caption text-muted-foreground">
                       Cantidad de bebidas
                     </Label>
                     <Input
@@ -398,7 +398,7 @@ export default function CombosPage() {
                 </div>
                 {form.include_side && (
                   <div className="ml-10 space-y-1">
-                    <Label className="text-xs text-muted-foreground">
+                    <Label className="text-caption text-muted-foreground">
                       Cantidad de acompañamientos
                     </Label>
                     <Input
@@ -444,7 +444,7 @@ export default function CombosPage() {
 
       {/* ---------- DELETE ---------- */}
       <AlertDialog open={deleteOpen} onOpenChange={(o) => !o && closeDelete()}>
-        <AlertDialogContent className="ios-glass rounded-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar "{deleting?.name}"?</AlertDialogTitle>
           </AlertDialogHeader>

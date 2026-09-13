@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Order, OrderStatus } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/format";
 import { useDroppable } from "@dnd-kit/core";
@@ -7,9 +9,31 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
+import { cardPresence, useSpring } from "@/lib/motion";
 import { SortableOrderCard } from "./sorteable-order-card";
+
+// Punto de estado, derivado del token, ya no de un string de color crudo
+// pasado por el dashboard.
+const statusDotClass: Record<string, string> = {
+  new: "bg-[var(--status-new)]",
+  ready: "bg-[var(--status-ready)]",
+  completed: "bg-[var(--status-completed)]",
+  canceled: "bg-[var(--status-canceled)]",
+};
+
+// El color real (no la clase) para --status-color de drop-glow — "transparent"
+// lo apaga sin tener que sacar la clase entera (así el transition del
+// utility no se pierde al togglear, evitando el bug del ring que aparecía
+// de golpe en vez de desvanecerse).
+const statusColorVar: Record<string, string> = {
+  new: "var(--status-new)",
+  ready: "var(--status-ready)",
+  completed: "var(--status-completed)",
+  canceled: "var(--status-canceled)",
+};
 
 interface OrderColumnProps {
   title: string;
@@ -17,8 +41,8 @@ interface OrderColumnProps {
   orders: Order[];
   onViewDetails: (order: Order) => void;
   onEditOrder?: (order: Order) => void; // 🆕
-  accentColor: string;
   onChangeStatus?: (order: Order) => void;
+  onMoveBack?: (order: Order) => void;
 }
 
 export function OrderColumn({
@@ -27,8 +51,8 @@ export function OrderColumn({
   orders,
   onViewDetails,
   onEditOrder, // 🆕
-  accentColor,
   onChangeStatus,
+  onMoveBack,
 }: OrderColumnProps) {
   const filteredOrders = orders.filter((order) => order.status === status);
   const columnRevenue = filteredOrders.reduce((sum, o) => sum + (o.total_amount ?? 0), 0);
@@ -37,35 +61,92 @@ export function OrderColumn({
     id: status,
   });
 
+  // Causalidad y armonía (§13): al soltar una tarjeta acá, drop-glow
+  // flashea el color de estado de la columna. Se detecta un "drop" como
+  // un incremento de conteo, no un evento propio — la columna no ve
+  // onDragEnd, solo el resultado de la mutación.
+  const prevCountRef = useRef(filteredOrders.length);
+  const [flashing, setFlashing] = useState(false);
+
+  useEffect(() => {
+    if (filteredOrders.length > prevCountRef.current) {
+      setFlashing(true);
+      // 420ms, no 260ms: si el timer y la transición del glow duraran lo
+      // mismo, el fade-out empezaría apenas terminara el fade-in y nunca
+      // se vería el brillo completo.
+      const t = setTimeout(() => setFlashing(false), 420);
+      prevCountRef.current = filteredOrders.length;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = filteredOrders.length;
+  }, [filteredOrders.length]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef(0);
+
+  // Hooks: llamados una vez acá arriba, no adentro del .map() de abajo --
+  // el numero de motion.div por render varia con filteredOrders.length, asi
+  // que useSpring("move") ahi adentro romperia las Rules of Hooks.
+  const pressTransition = useSpring("press");
+  const moveTransition = useSpring("move");
+
+  // scroll-edge-y (globals.css) lee --edge-top: en reposo es 0px (sin
+  // efecto), y sube a 14px apenas hay algo scrolleado arriba — así el
+  // fade solo aparece cuando de verdad hay contenido oculto arriba.
+  const handleScroll = () => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      const el = scrollRef.current;
+      if (!el) return;
+      el.style.setProperty("--edge-top", `${Math.min(14, el.scrollTop)}px`);
+    });
+  };
+
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        "flex flex-col min-h-0 rounded-lg border ios-glass bg-card transition-colors",
-        isOver && "ring-2 ring-primary/40",
-      )}
+      className="flex flex-col min-h-0 rounded-2xl material-well drop-glow"
+      style={
+        {
+          "--status-color": isOver || flashing ? statusColorVar[status] : "transparent",
+        } as React.CSSProperties
+      }
     >
-      <div className="shrink-0 flex items-center justify-between border-b border-border p-4">
+      <div className="shrink-0 flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className={`h-2 w-2 rounded-full ${accentColor}`} />
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className={cn("h-2 w-2 rounded-full", statusDotClass[status])} />
+          <h2 className="text-overline text-muted-foreground">
             {title}
           </h2>
         </div>
         <div className="flex items-center gap-2">
           {columnRevenue > 0 && (
-            <span className="text-xs text-muted-foreground font-mono">
+            <span className="text-caption text-muted-foreground font-mono">
               {formatCurrency(columnRevenue)}
             </span>
           )}
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold">
-            {filteredOrders.length}
+          <span className="relative inline-flex h-5 min-w-5 items-center justify-center overflow-hidden rounded-full bg-muted px-2.5 py-0.5 text-caption font-semibold">
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.span
+                key={filteredOrders.length}
+                initial={{ y: -8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 8, opacity: 0 }}
+                transition={pressTransition}
+                className="inline-block"
+              >
+                {filteredOrders.length}
+              </motion.span>
+            </AnimatePresence>
           </span>
         </div>
       </div>
       <div
+        ref={scrollRef}
+        onScroll={handleScroll}
         className="
-      flex-1 min-h-0 overflow-y-auto p-4 space-y-6
+      flex-1 min-h-0 overflow-y-auto p-4 space-y-6 scroll-edge-y
       max-h-[calc(100vh-240px)]
       lg:max-h-[calc(100vh-300px)]
     "
@@ -76,25 +157,40 @@ export function OrderColumn({
         >
           {filteredOrders.length === 0 ? (
             <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
-              <p className="text-sm text-muted-foreground">Sin pedidos</p>
+              <p className="text-subheadline text-muted-foreground">Sin pedidos</p>
             </div>
           ) : (
-            filteredOrders.map((order) => (
-              <SortableOrderCard
-                key={order.id}
-                order={order}
-                onViewDetails={onViewDetails}
-                onEditOrder={onEditOrder} // 🆕
-                onChangeStatus={onChangeStatus} // 👈
-              />
-            ))
+            // popLayout: la tarjeta que sale se saca del flujo antes de
+            // terminar su exit, así las que quedan cierran el hueco con
+            // el spring `move` en vez de esperar a que termine de encogerse.
+            <AnimatePresence mode="popLayout" initial={false}>
+              {filteredOrders.map((order) => (
+                <motion.div
+                  key={order.id}
+                  layout
+                  variants={cardPresence}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={moveTransition}
+                >
+                  <SortableOrderCard
+                    order={order}
+                    onViewDetails={onViewDetails}
+                    onEditOrder={onEditOrder} // 🆕
+                    onChangeStatus={onChangeStatus} // 👈
+                    onMoveBack={onMoveBack}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
 
-          {/* hint iOS-style */}
-          {filteredOrders.length > 0 && (
+          {/* hint iOS-style — solo en la columna "new", no duplicado en ambas */}
+          {status === "new" && filteredOrders.length > 0 && (
             <div className="pointer-events-none mt-4 flex justify-center">
-              <div className=" px-3 py-1 text-xs text-muted-foreground">
-                - Arrastrá las tarjetas para cambiar su estado -
+              <div className=" px-3 py-1 text-caption text-muted-foreground">
+                - Arrastrá las tarjetas, o usá los botones de cada pedido, para cambiar su estado -
               </div>
             </div>
           )}

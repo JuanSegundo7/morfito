@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatTile } from "@/components/ui/stat-tile";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -40,6 +41,7 @@ import { formatCurrency } from "@/lib/utils/format";
 import { ExternalIncomePanel } from "@/components/analytics/external-income-panel";
 import { useVertical } from "@/components/providers/vertical-provider";
 import { getOrderSources } from "@/lib/utils/commission";
+import { useHasService } from "@/components/providers/services-provider";
 import {
   ChartContainer,
   ChartTooltip,
@@ -139,6 +141,10 @@ const RANK_CONFIG = [
 
 export default function AnalyticsPage() {
   const vertical = useVertical();
+  // Gateado por plan: la card "Ingresos por canal" solo tiene sentido si
+  // el proyecto contrato el servicio order_source_commission (ver
+  // services-provider.tsx).
+  const hasOrderSourceService = useHasService("order_source_commission");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | undefined>(undefined);
@@ -272,7 +278,7 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <section className="flex h-screen flex-col">
+    <section className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.rendimiento.title}
         subtitle={vertical.labels.pages.rendimiento.subtitle}
@@ -362,60 +368,41 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Metrics cards */}
-        {analyticsLoading ? (
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
-            {metrics.map((metric) => {
-              const isPositive = metric.invertChange
-                ? metric.change <= 0
-                : metric.change >= 0;
-              return (
-                <Card key={metric.title} className="ios-glass p-0 bg-card">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div
-                        className="rounded-md p-1.5"
-                        style={{
-                          backgroundColor: `color-mix(in srgb, ${metric.color} 15%, transparent)`,
-                        }}
-                      >
-                        <metric.icon
-                          className="h-3.5 w-3.5"
-                          style={{ color: metric.color }}
-                        />
-                      </div>
-                      {viewMode !== "custom" && <div
-                        className={`flex items-center gap-0.5 text-xs ${
-                          isPositive
-                            ? "text-[var(--status-paid)]"
-                            : "text-[var(--status-canceled)]"
-                        }`}
-                      >
-                        {isPositive ? (
-                          <TrendingUp className="h-3 w-3" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3" />
-                        )}
-                        <span>{Math.abs(metric.change).toFixed(1)}%</span>
-                      </div>}
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+          {metrics.map((metric) => {
+            const isPositive = metric.invertChange
+              ? metric.change <= 0
+              : metric.change >= 0;
+            return (
+              <StatTile
+                key={metric.title}
+                icon={metric.icon}
+                color={metric.color}
+                value={metric.format(metric.value)}
+                label={metric.title}
+                loading={analyticsLoading}
+                delta={
+                  viewMode !== "custom" && (
+                    <div
+                      className={`flex items-center gap-0.5 text-caption ${
+                        isPositive
+                          ? "text-[var(--status-paid)]"
+                          : "text-[var(--status-canceled)]"
+                      }`}
+                    >
+                      {isPositive ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      <span>{Math.abs(metric.change).toFixed(1)}%</span>
                     </div>
-                    <p className="text-xl font-bold leading-tight">
-                      {metric.format(metric.value)}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {metric.title}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  )
+                }
+              />
+            );
+          })}
+        </div>
 
         {/* External income */}
         <div className="mt-4">
@@ -464,9 +451,10 @@ export default function AnalyticsPage() {
                     key={item.label}
                     className="flex flex-col items-center justify-center gap-1 rounded-xl border bg-muted/30 px-4 py-4 text-center"
                   >
-                    <span className="text-2xl leading-none">{item.emoji}</span>
-                    <span className="text-2xl font-bold tabular-nums">{item.value}</span>
-                    <span className="text-xs text-muted-foreground">{item.label}</span>
+                    {/* emoji: no es tipografia, valor arbitrario en vez de un token semantico */}
+                    <span className="text-[24px] leading-none">{item.emoji}</span>
+                    <span className="text-amount tabular-nums">{item.value}</span>
+                    <span className="text-caption text-muted-foreground">{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -474,10 +462,11 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Revenue by source — cost/stock/finance porting, PR3. Mirrors the
+        {/* Revenue by source — cost/stock/finance porting, PR3. Mirrors la
             "Unidades vendidas" card's structure/styling above (loading
             skeleton, empty state, list-of-buckets layout) for visual
-            consistency. */}
+            consistency. Gateada por plan: ver hasOrderSourceService arriba. */}
+        {hasOrderSourceService && (
         <Card className="mt-4 ios-glass bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
@@ -531,6 +520,7 @@ export default function AnalyticsPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Charts */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -563,7 +553,7 @@ export default function AnalyticsPage() {
                           day: "2-digit", month: "short",
                         });
                         return (
-                          <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-sm min-w-[140px]">
+                          <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-subheadline min-w-[140px]">
                             <p className="font-medium mb-2">{label}</p>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--color-chart-1)" }} />
@@ -585,6 +575,7 @@ export default function AnalyticsPage() {
                       fill="var(--color-chart-1)"
                       fillOpacity={0.18}
                       strokeWidth={2}
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ChartContainer>
@@ -625,7 +616,7 @@ export default function AnalyticsPage() {
                           day: "2-digit", month: "short",
                         });
                         return (
-                          <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-sm min-w-[160px]">
+                          <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-subheadline min-w-[160px]">
                             <p className="font-medium mb-2">{label}</p>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--color-chart-2)" }} />
@@ -647,6 +638,7 @@ export default function AnalyticsPage() {
                       fill="var(--color-chart-2)"
                       fillOpacity={0.18}
                       strokeWidth={2}
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ChartContainer>
@@ -663,7 +655,7 @@ export default function AnalyticsPage() {
                 <Trophy className="h-5 w-5 text-amber-500" />
                 Hall of Fame — Más vendidas
               </CardTitle>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-caption">
                 {viewMode === "custom" ? periodLabel : viewMode === "month" ? "Este mes" : "Esta semana"}
               </Badge>
             </div>
@@ -681,7 +673,7 @@ export default function AnalyticsPage() {
             ) : !topBurgers || topBurgers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <Trophy className="h-12 w-12 mb-3 opacity-20" />
-                <p className="text-sm">
+                <p className="text-subheadline">
                   Sin datos para el período seleccionado
                 </p>
               </div>
@@ -702,8 +694,8 @@ export default function AnalyticsPage() {
                           key={burger.id}
                           className={`flex flex-col items-center gap-2 transition-all ${cfg.size}`}
                         >
-                          {/* Crown / medal */}
-                          <span className="text-xl leading-none">
+                          {/* Crown / medal — emoji, valor arbitrario */}
+                          <span className="text-[20px] leading-none">
                             {burger.rank === 1
                               ? "👑"
                               : burger.rank === 2
@@ -721,7 +713,7 @@ export default function AnalyticsPage() {
                                 : "min-w-[110px]"
                             }`}
                           >
-                            {/* Image or emoji placeholder */}
+                            {/* Image or emoji placeholder (emoji: valor arbitrario) */}
                             {burger.image_url ? (
                               <img
                                 src={burger.image_url}
@@ -734,10 +726,10 @@ export default function AnalyticsPage() {
                               />
                             ) : (
                               <div
-                                className={`flex items-center justify-center rounded-full bg-muted border-2 ${
+                                className={`flex items-center justify-center rounded-full bg-muted border-2 leading-none ${
                                   isFirst
-                                    ? "h-16 w-16 border-amber-400 text-3xl"
-                                    : "h-12 w-12 border-slate-400/40 text-2xl"
+                                    ? "h-16 w-16 border-amber-400 text-[30px]"
+                                    : "h-12 w-12 border-slate-400/40 text-[24px]"
                                 }`}
                               >
                                 🍔
@@ -747,7 +739,7 @@ export default function AnalyticsPage() {
                             {/* Name */}
                             <p
                               className={`text-center font-semibold leading-tight ${
-                                isFirst ? "text-sm" : "text-xs"
+                                isFirst ? "text-subheadline" : "text-caption"
                               }`}
                             >
                               {burger.name}
@@ -757,18 +749,18 @@ export default function AnalyticsPage() {
                             <div className="flex flex-col items-center gap-0.5">
                               <span
                                 className={`font-bold tabular-nums ${cfg.textColor} ${
-                                  isFirst ? "text-xl" : "text-base"
+                                  isFirst ? "text-title3" : "text-callout"
                                 }`}
                               >
                                 {burger.totalSold}
                               </span>
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-caption2 text-muted-foreground">
                                 unidades
                               </span>
                             </div>
 
                             {/* Revenue */}
-                            <span className="text-[10px] text-muted-foreground font-medium">
+                            <span className="text-caption2 text-muted-foreground font-medium">
                               {formatCurrency(burger.totalRevenue)}
                             </span>
                           </div>
@@ -801,7 +793,7 @@ export default function AnalyticsPage() {
                           key={burger.id}
                           className="flex items-center gap-3 rounded-xl bg-muted/40 px-4 py-3"
                         >
-                          <span className="text-muted-foreground font-bold text-sm w-5 text-center">
+                          <span className="text-muted-foreground font-bold text-subheadline w-5 text-center">
                             {burger.rank}°
                           </span>
                           {burger.image_url ? (
@@ -811,15 +803,16 @@ export default function AnalyticsPage() {
                               className="h-8 w-8 rounded-full object-cover"
                             />
                           ) : (
-                            <span className="text-xl">🍔</span>
+                            // emoji: valor arbitrario, no es tipografia
+                            <span className="text-[20px] leading-none">🍔</span>
                           )}
-                          <span className="flex-1 font-medium text-sm">
+                          <span className="flex-1 font-medium text-subheadline">
                             {burger.name}
                           </span>
-                          <span className="text-sm text-muted-foreground tabular-nums">
+                          <span className="text-subheadline text-muted-foreground tabular-nums">
                             {burger.totalSold} ud.
                           </span>
-                          <span className="text-sm font-medium tabular-nums">
+                          <span className="text-subheadline font-medium tabular-nums">
                             {formatCurrency(burger.totalRevenue)}
                           </span>
                         </div>
@@ -871,12 +864,14 @@ export default function AnalyticsPage() {
                     dataKey="orders"
                     fill="var(--color-chart-1)"
                     radius={[4, 4, 0, 0]}
+                    isAnimationActive={false}
                   />
                   <Bar
                     yAxisId="right"
                     dataKey="revenue"
                     fill="var(--color-chart-2)"
                     radius={[4, 4, 0, 0]}
+                    isAnimationActive={false}
                   />
                 </BarChart>
               </ChartContainer>

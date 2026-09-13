@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,13 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, ChevronUp, Check, X } from "lucide-react";
 import { useProducts, useAddonProducts, useProductWithVariants } from "@/lib/hooks/use-products";
 import { useUpdateProduct } from "@/lib/hooks/use-products-crud";
-import { useAllSupplies } from "@/lib/hooks/supplies/use-supplies";
-import { useProductSuppliesBulk } from "@/lib/hooks/supplies/use-product-supplies";
-import { computeProductCost, computeMargin } from "@/lib/services/recipe-cost";
-import { RecipeEditor } from "@/components/precios/recipe-editor";
 import { formatCurrency } from "@/lib/utils/format";
-import type { ExtraCategory, ProductSupplyWithSupply, Supply } from "@/lib/types";
+import type { ExtraCategory } from "@/lib/types";
 import { useVertical } from "@/components/providers/vertical-provider";
+import { useHasService } from "@/components/providers/services-provider";
 import {
   getOrderSources,
   saveOrderSources,
@@ -99,6 +96,12 @@ function BurgerVariantsPreview({ productId }: { productId: string }) {
 
 export default function PricingPage() {
   const vertical = useVertical();
+  // Gateado por plan: el editor de canales/comisiones no tiene sentido si
+  // el proyecto no contrato order_source_commission (ver
+  // services-provider.tsx) -- ocultarlo tambien acá, no solo en el wizard/
+  // rendimiento, evita que un admin configure canales para una feature que
+  // no tiene.
+  const hasOrderSourceService = useHasService("order_source_commission");
   const { data: burgers, isLoading: burgersLoading } = useProducts();
   const { data: extras, isLoading: extrasLoading } = useAddonProducts();
   const updateBurger = useUpdateProduct();
@@ -109,51 +112,6 @@ export default function PricingPage() {
   const [expandedBurgerId, setExpandedBurgerId] = useState<string | null>(
     null,
   );
-
-  // Cost/stock/finance porting, PR1: per-product cost/margin, derived (never
-  // its own cached query — see lib/hooks/supplies/use-product-supplies.ts's
-  // architectural-invariant doc comment). useAllSupplies() (not
-  // useSupplies()) on purpose: it includes inactive supplies too, which is
-  // what lets computeProductCost tell "inactive" apart from "missing"
-  // (QA2.3) instead of both looking like a hole in the live-supplies map.
-  const burgerIds = useMemo(() => (burgers ?? []).map((b) => b.id), [burgers]);
-  const { data: allSupplies } = useAllSupplies();
-  const { data: recipesByProduct } = useProductSuppliesBulk(burgerIds);
-
-  const supplyById = useMemo(() => {
-    const map: Record<string, Supply> = {};
-    for (const supply of allSupplies ?? []) map[supply.id] = supply;
-    return map;
-  }, [allSupplies]);
-
-  const costByProduct = useMemo(() => {
-    const map: Record<string, ReturnType<typeof computeProductCost>> = {};
-    // allSupplies resolves after recipesByProduct on a cold load in practice
-    // (two independent queries racing) — without this guard, supplyById is
-    // still {} while recipesByProduct has already arrived, so every recipe
-    // line's supply is momentarily undefined and every burger flashes
-    // "Receta incompleta" even when its recipe is actually complete.
-    if (!allSupplies) return map;
-
-    for (const burger of burgers ?? []) {
-      const rawLines = recipesByProduct?.[burger.id] ?? [];
-      // Rebuild each line's `supply` from the freshest ["all-supplies"]
-      // data instead of trusting the bulk query's embedded join, which can
-      // go stale: editing a supply's cost_per_unit invalidates
-      // ["supplies"]/["all-supplies"] but not ["product-supplies-bulk", ...]
-      // (see use-product-supplies.ts). Without this override, QA2.2
-      // (editing a supply's cost then revisiting /precios) would show a
-      // stale cost until an unrelated refetch.
-      const freshLines: ProductSupplyWithSupply[] = rawLines.map((line) => ({
-        ...line,
-        supply: supplyById[line.supply_id] as ProductSupplyWithSupply["supply"],
-      }));
-
-      map[burger.id] = computeProductCost(freshLines);
-    }
-
-    return map;
-  }, [burgers, recipesByProduct, supplyById]);
 
   const [defaultDeliveryFee, setDefaultDeliveryFee] = useState(2000);
   const [editingDeliveryFee, setEditingDeliveryFee] = useState(false);
@@ -259,7 +217,7 @@ export default function PricingPage() {
   const isLoading = burgersLoading || extrasLoading;
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.precios.title}
         subtitle={vertical.labels.pages.precios.subtitle}
@@ -275,7 +233,7 @@ export default function PricingPage() {
             <div className="flex items-center justify-between rounded-lg bg-secondary/30 p-3">
               <div>
                 <p className="font-medium">Costo de delivery por defecto</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   Se usa como valor inicial al crear un pedido con envío
                 </p>
               </div>
@@ -330,6 +288,13 @@ export default function PricingPage() {
 
         {/* Cost/stock/finance porting, PR2: order sources (sales channels) +
             their commission rates */}
+        {/* NOTA: este bloque no paso por la migracion tipografica de
+            jebbs-dashboard@42eecdb -- la logica de negocio (multi-canal,
+            editable) diverge demasiado de lo que jebbs tenia en ese punto
+            (un solo canal hardcodeado) como para mezclar con seguridad.
+            Migrar text-xs -> text-caption aca en una pasada dedicada aparte.
+            Gateado por plan: ver hasOrderSourceService arriba. */}
+        {hasOrderSourceService && (
         <Card className="bg-card">
           <CardHeader>
             <CardTitle>Canales de venta y comisiones</CardTitle>
@@ -436,6 +401,7 @@ export default function PricingPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         <Tabs defaultValue="burgers">
           <TabsList className="mb-6">
@@ -469,29 +435,10 @@ export default function PricingPage() {
                           <div className="flex items-center gap-3">
                             <span className="font-medium">{burger.name}</span>
                             {!burger.is_available && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-caption">
                                 No disponible
                               </Badge>
                             )}
-                            {(() => {
-                              const cost = costByProduct[burger.id];
-                              if (!cost || cost.lines.length === 0) return null;
-                              const margin = computeMargin(burger.base_price, cost.total);
-                              return (
-                                <span
-                                  className="text-xs text-muted-foreground"
-                                  title={cost.incomplete ? "Receta incompleta: hay insumos faltantes o inactivos" : undefined}
-                                >
-                                  Costo: {formatCurrency(cost.total)}
-                                  {margin.marginPct !== null && ` · Margen: ${margin.marginPct.toFixed(0)}%`}
-                                  {cost.incomplete && (
-                                    <Badge variant="secondary" className="ml-1 text-xs text-status-ready">
-                                      Receta incompleta
-                                    </Badge>
-                                  )}
-                                </span>
-                              );
-                            })()}
                           </div>
 
                           <div className="flex items-center gap-1">
@@ -568,15 +515,7 @@ export default function PricingPage() {
                         </div>
 
                         {expandedBurgerId === burger.id && (
-                          <>
-                            <BurgerVariantsPreview productId={burger.id} />
-                            <div className="border-t px-3 pt-3">
-                              <p className="mb-1 text-xs font-medium text-muted-foreground">
-                                Receta (insumos)
-                              </p>
-                              <RecipeEditor productId={burger.id} />
-                            </div>
-                          </>
+                          <BurgerVariantsPreview productId={burger.id} />
                         )}
                       </div>
                     ))}
@@ -620,7 +559,7 @@ export default function PricingPage() {
                             <div className="flex items-center gap-3">
                               <span className="font-medium">{extra.name}</span>
                               {!extra.is_available && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-caption">
                                   No disponible
                                 </Badge>
                               )}

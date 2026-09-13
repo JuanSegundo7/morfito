@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -140,13 +141,13 @@ export default function MenuPage() {
 
     // Validar tipo de archivo
     if (!file.type.startsWith("image/")) {
-      alert("Por favor selecciona una imagen válida");
+      toast.error("Por favor selecciona una imagen válida");
       return;
     }
 
     // Validar tamaño (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert("La imagen no puede superar los 2MB");
+      toast.error("La imagen no puede superar los 2MB");
       return;
     }
 
@@ -218,7 +219,7 @@ export default function MenuPage() {
       setDialogOpen(false);
     } catch (error) {
       console.error("Error saving product:", error);
-      alert("Error al guardar el producto");
+      toast.error("Error al guardar el producto");
     }
   };
 
@@ -245,7 +246,7 @@ export default function MenuPage() {
   /* ================= RENDER ================= */
 
   return (
-    <section className="flex h-screen flex-col">
+    <section className="flex flex-1 min-h-0 flex-col">
       <Header
         title={vertical.labels.pages.menu.title}
         subtitle={vertical.labels.pages.menu.subtitle}
@@ -255,7 +256,7 @@ export default function MenuPage() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-subheadline text-muted-foreground">
               {burgers?.length || 0} {vertical.labels.productNounPlural}{" "}
               {burgers &&
                 `(${burgers.filter((b) => b.is_available).length} disponibles)`}
@@ -280,7 +281,11 @@ export default function MenuPage() {
               <Card
                 key={burger.id}
                 className={cn(
-                  "group overflow-hidden transition-all hover:shadow-lg pt-0 bg-card",
+                  // Sombra de hover: la hereda de Card (A1, depth="raised"
+                  // por default). Antes acá se pisaba con hover:shadow-lg
+                  // — la clase default de Tailwind, no registrada en el
+                  // theme, invisible sobre #08090c.
+                  "group overflow-hidden pt-0 bg-card",
                   !burger.is_available && "opacity-60",
                 )}
               >
@@ -311,15 +316,15 @@ export default function MenuPage() {
                 <CardContent className="p-4">
                   {/* Header */}
                   <div className="mb-3">
-                    <h3 className="font-semibold text-lg">{burger.name}</h3>
-                    <p className="text-xl font-bold text-primary">
+                    <h3 className="text-headline">{burger.name}</h3>
+                    <p className="text-title3 font-bold text-primary">
                       {formatCurrency(burger.base_price)}
                     </p>
                   </div>
 
                   {/* Description */}
                   {burger.description && (
-                    <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
+                    <p className="mb-3 text-subheadline text-muted-foreground line-clamp-2">
                       {burger.description}
                     </p>
                   )}
@@ -331,13 +336,13 @@ export default function MenuPage() {
                         <Badge
                           key={ing}
                           variant="outline"
-                          className="text-xs bg-card"
+                          className="text-caption bg-card"
                         >
                           {ing}
                         </Badge>
                       ))}
                       {burger.ingredients.length > 3 && (
-                        <Badge variant="outline" className="text-xs bg-card">
+                        <Badge variant="outline" className="text-caption bg-card">
                           +{burger.ingredients.length - 3}
                         </Badge>
                       )}
@@ -390,10 +395,10 @@ export default function MenuPage() {
         ) : (
           <div className="py-20 text-center">
             <ImageIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">
+            <h3 className="mb-2 text-title3">
               No hay {vertical.labels.productNounPlural}
             </h3>
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="mb-4 text-subheadline text-muted-foreground">
               Todavía no cargaste productos en el menú
             </p>
             <Button onClick={handleOpenCreate}>
@@ -453,10 +458,10 @@ export default function MenuPage() {
                   >
                     <div className="text-center">
                       <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-subheadline text-muted-foreground">
                         Click para subir imagen
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-caption text-muted-foreground mt-1">
                         PNG, JPG hasta 2MB
                       </p>
                     </div>
@@ -472,7 +477,7 @@ export default function MenuPage() {
                 {isUploading && (
                   <div className="mt-2">
                     <Progress value={uploadProgress} />
-                    <p className="text-xs text-center text-muted-foreground mt-1">
+                    <p className="text-caption text-center text-muted-foreground mt-1">
                       Subiendo... {uploadProgress}%
                     </p>
                   </div>
@@ -647,7 +652,7 @@ export default function MenuPage() {
             <AlertDialogDescription>
               ¿Estás seguro de eliminar "{deletingBurger?.name}"?
               <br />
-              <span className="text-sm text-muted-foreground mt-2 block">
+              <span className="text-subheadline text-muted-foreground mt-2 block">
                 Si este producto tiene pedidos asociados, no se podrá
                 eliminar. En ese caso, podés ocultarlo usando el botón de
                 "Ocultar".
