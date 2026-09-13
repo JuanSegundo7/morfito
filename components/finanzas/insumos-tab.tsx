@@ -78,7 +78,7 @@ export function InsumosTab() {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto p-6 space-y-4">
+      <div className="flex-1 overflow-auto p-6 md:px-0 space-y-4">
         <LowStockBanner supplies={supplies ?? []} />
 
         {!!comboLinesNotCounted && comboLinesNotCounted > 0 && (

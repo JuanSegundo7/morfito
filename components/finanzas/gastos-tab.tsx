@@ -164,7 +164,7 @@ export function GastosTab() {
 
   return (
     <>
-      <div className="flex-1 overflow-auto p-6 space-y-4">
+      <div className="flex-1 overflow-auto p-6 md:px-0 space-y-4">
         {/* Period selector — shared by both sub-tabs (anchorDate lifted
             above the Tabs below). */}
         <div className="flex items-center justify-between">

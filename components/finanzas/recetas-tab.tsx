@@ -116,7 +116,7 @@ export function RecetasTab() {
   }, [burgers, rowsByProduct]);
 
   return (
-    <div className="flex-1 overflow-auto p-6 space-y-4">
+    <div className="flex-1 overflow-auto p-6 md:px-0 space-y-4">
       <RecipeMarginChart data={chartData} isLoading={burgersLoading} />
 
       <Card className="bg-card">

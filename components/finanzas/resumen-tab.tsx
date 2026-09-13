@@ -137,7 +137,7 @@ export function ResumenTab() {
   ];
 
   return (
-    <div className="flex-1 overflow-auto p-6 space-y-4">
+    <div className="flex-1 overflow-auto p-6 md:px-0 space-y-4">
       {/* Period selector — same shape as /rendimiento's (see doc comment) */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1 rounded-xl border bg-card p-1 w-fit">

@@ -52,7 +52,7 @@ export function FinanzasTabs() {
       onValueChange={handleTabChange}
       className="flex flex-1 flex-col overflow-hidden gap-0"
     >
-      <TabsList className="mx-4 mt-4 w-fit md:mx-6">
+      <TabsList className="mx-4 mt-4 w-fit md:mx-0">
         <TabsTrigger value="resumen">Resumen</TabsTrigger>
         <TabsTrigger value="gastos">Gastos</TabsTrigger>
         <TabsTrigger value="insumos">Insumos</TabsTrigger>
