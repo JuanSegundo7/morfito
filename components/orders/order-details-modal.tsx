@@ -86,7 +86,14 @@ export function OrderDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-card">
+      {/* Sin bg-card: DialogContent ya trae `modal-surface` (globals.css,
+          --material-thick) como fondo compartido de todo modal. bg-card
+          resuelve a --material-thin (más fino/translúcido) y, al venir
+          después en la lista de clases, le ganaba el background-color a
+          modal-surface sin tocarle el backdrop-filter/box-shadow -- el modal
+          quedaba a mitad de su opacidad real y el board de atrás se
+          transparentaba. Mismo bug corregido en jebbs-dashboard (e923976). */}
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between p-2">
             <div className="flex items-center gap-3">
@@ -159,6 +166,16 @@ export function OrderDetailsModal({
                     {orderWithItems.customer_address.label} -{" "}
                     {orderWithItems.customer_address.address}
                   </span>
+                </div>
+              )}
+
+              {/* Referencia (customer_address.notes): lo que el cliente
+                  escribe en "Timbre, piso, entre calles...". Se guardaba y
+                  viajaba a la plantilla de WhatsApp, pero no aparecía en
+                  ningún lado de este modal. */}
+              {orderWithItems.customer_address?.notes && (
+                <div className="pl-6 text-caption text-muted-foreground/80">
+                  Ref: {orderWithItems.customer_address.notes}
                 </div>
               )}
 

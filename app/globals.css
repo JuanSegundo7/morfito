@@ -9,11 +9,18 @@
      regiones sin vidrio, y fallback cuando backdrop-filter no esta
      disponible (ver @media prefers-reduced-transparency mas abajo, que
      hasta ahora apuntaba a estas clases sin que existieran: quedaban
-     como fallback muerto). Neutros, no dependen del acento de producto. */
-  --surface-0: #f2f2f7;
-  --surface-1: #ffffff;
-  --surface-2: #f5f5f7;
-  --surface-3: #e9e9ee;
+     como fallback muerto). Neutros, no dependen del acento de producto.
+     Bajados unos puntos de luminancia desde blanco/gris puro (mismo ajuste
+     que jebbs-dashboard e923976, reportado allá como "el modo claro es
+     demasiado brillante, molesto"): texto #1c1c1e sobre surface-1 pasaba de
+     ~16.5:1 a ~15.2:1 de contraste, todavía muy por encima del mínimo WCAG
+     AA (4.5:1) pero sin el glare de blanco puro en superficies grandes.
+     Mismo orden relativo de elevación (surface-1 > surface-2 > surface-0 >
+     surface-3). */
+  --surface-0: #eef0f3;
+  --surface-1: #f7f8fa;
+  --surface-2: #f2f3f5;
+  --surface-3: #e5e6ea;
 
   /* Materiales translucidos. */
   --material-thin: rgba(255, 255, 255, 0.72);
@@ -42,6 +49,12 @@
   --card-foreground: #1c1c1e;
   --popover: var(--material-thick);
   --popover-foreground: #1c1c1e;
+  /* --accent-brand: se usaba (nav-rail-active, más abajo) pero NUNCA se
+     definía, así que ese utility no pintaba nada. Mismo valor que --primary
+     (y que el default de app_settings.primary_color_light, scripts/048):
+     theme-color-provider.tsx lo pisa en runtime con el color de marca
+     guardado, este es el valor de antes de que carguen los settings. */
+  --accent-brand: #007aff;
   --primary: #007aff;
   --primary-foreground: #ffffff;
   --secondary: rgba(120, 120, 128, 0.16);
@@ -114,6 +127,7 @@
   --card-foreground: #fafafa;
   --popover: var(--material-thick);
   --popover-foreground: #fafafa;
+  --accent-brand: #0a84ff; /* ver nota en :root -- default de primary_color_dark */
   --primary: #0a84ff;
   --primary-foreground: #ffffff;
   --secondary: #27272a;
@@ -533,6 +547,17 @@
 /* Fallbacks de accesibilidad (§14) — sin capa, para ganar siempre
    por especificidad de aparición contra las utilities de arriba. */
 
+/* !important en CADA declaración de acá, no solo en backdrop-filter: las
+   utilities que emite @utility (material-*, modal-surface, scrim, ios-blur,
+   ios-glass) viven en la capa de utilities de Tailwind v4, que por diseño le
+   gana a CSS plano de la misma especificidad sin importar el orden en el
+   archivo. Antes background-color NO tenía !important -- perdía la cascada
+   contra la utility real, así que con "reducir transparencia" activado en
+   el SO quedaba lo peor de los dos mundos: sin blur (eso sí ganaba, por su
+   !important) pero con la opacidad NORMAL en vez de la reforzada, mucho más
+   transparente de lo pensado. Mismo bug ya corregido en jebbs-dashboard
+   (e923976), confirmado allá con DevTools: Computed mostraba
+   backdrop-filter: none junto a un background-color sin reforzar. */
 @media (prefers-reduced-transparency: reduce) {
   .material-thin,
   .material-regular,
@@ -544,29 +569,29 @@
     -webkit-backdrop-filter: none !important;
   }
   .material-thin {
-    background-color: var(--surface-1);
+    background-color: var(--surface-1) !important;
   }
   .material-regular {
-    background-color: var(--surface-2);
+    background-color: var(--surface-2) !important;
   }
   .material-thick,
   .modal-surface {
-    background-color: var(--surface-3);
+    background-color: var(--surface-3) !important;
   }
   .scrim,
   .ios-blur {
-    background-color: rgba(0, 0, 0, 0.72);
+    background-color: rgba(0, 0, 0, 0.72) !important;
   }
   .ios-sidebar [data-slot="sidebar-inner"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: var(--surface-3);
+    background-color: var(--surface-3) !important;
   }
   /* .ios-glass no tiene blur que sacar, pero su fondo (--card =
      --material-thin, alpha 0.42 en oscuro) se queda translucido igual --
      ~58 sitios lo usan. */
   .ios-glass {
-    background-color: var(--surface-1);
+    background-color: var(--surface-1) !important;
   }
 }
 
