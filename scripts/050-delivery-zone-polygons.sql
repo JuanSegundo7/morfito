@@ -1,0 +1,89 @@
+-- ============================================================
+-- Morfito — settings port from jebbs-dashboard: zone polygons (050)
+-- ============================================================
+--
+-- WHAT THIS FILE IS
+-- ------------------
+-- Adds the two columns behind the Envíos map: a per-zone drawn shape and a
+-- per-tenant map image. Ported from jebbs-dashboard's
+-- scripts/021-delivery-zone-polygons.sql, REDESIGNED for a white-label
+-- product (see below).
+--
+-- WHAT CHANGED VS. JEBBS
+-- -------------------------------------------------------------------------
+-- jebbs assumes ONE hardcoded SVG illustration of its own delivery area
+-- (viewBox 0 0 1654 966) and stores polygon points in that SVG's pixel
+-- space. That cannot work here: every shop has a different area. So:
+--
+--   - `app_settings.delivery_map_url` (text, nullable): public URL of the
+--     map image the owner uploads from Configuración > Envíos. NULL means
+--     "no image yet" — the dashboard falls back to a plain grid canvas so
+--     shapes can still be drawn.
+--   - `delivery_zones.map_polygon` (jsonb, nullable): the drawn shape.
+--
+-- COORDINATE MODEL (this is the contract — do not change lightly)
+-- -------------------------------------------------------------------------
+-- `map_polygon` is an array of `[x, y]` pairs stored as PER-MILLE of the
+-- image size: x = (fraction of image width) * 1000, y = (fraction of image
+-- height) * 1000, both in the range 0..1000. Example: a point at the exact
+-- centre of the image is [500, 500].
+--
+-- Why per-mille and not pixels: the owner can replace the map image later
+-- with one of a different resolution or aspect ratio; relative coordinates
+-- keep every polygon on the same geographic spot. Absolute pixels would
+-- silently misplace all of them. Rendering multiplies by the image's
+-- natural width/height (see lib/utils/map-coordinates.ts).
+--
+-- Why jsonb (one column) and not a child table of points: a polygon is
+-- always read and written as a whole (the editor saves the full vertex
+-- list; the preview draws the full list). There is no query that touches a
+-- single vertex, so a points table would add joins and ordering columns for
+-- nothing. No CHECK on shape or range: like the rest of this schema,
+-- validation (>= 3 points, clamp to 0..1000) lives in the TS layer.
+--
+-- Both columns are nullable with no default: existing rows are correctly
+-- "no shape" / "no image" without a backfill. No new RLS policy is needed —
+-- the existing "Allow all operations" policies on both tables cover the new
+-- columns.
+--
+-- BEFORE RUNNING ON PRODUCTION
+-- -------------------------------------------------------------------------
+--   Must return ZERO rows — if it returns a row, a column already exists,
+--   STOP and inspect it instead of running this:
+--
+--     SELECT table_name, column_name, data_type
+--     FROM information_schema.columns
+--     WHERE table_schema = 'public'
+--       AND (   (table_name = 'delivery_zones' AND column_name = 'map_polygon')
+--            OR (table_name = 'app_settings'   AND column_name = 'delivery_map_url'));
+--
+--   Also requires 048 (app_settings) and 049 (delivery_zones) to be applied.
+--
+-- ADD COLUMN IF NOT EXISTS is deliberately NOT used: it would silently
+-- succeed against a pre-existing column of the wrong type.
+--
+-- The script is wrapped in a transaction: if any statement fails, nothing
+-- partially applies.
+--
+-- THIS HAS NOT BEEN RUN AGAINST ANY LIVE DATABASE
+-- -------------------------------------------------
+-- Same caveat as every prior migration in this repo. Apply to a
+-- throwaway/dev clone first. The map image itself lives in the `branding`
+-- Storage bucket under `maps/` (the bucket is created by hand, same as for
+-- logos).
+--
+-- REVERSIBILITY
+-- --------------
+-- Purely additive:
+--   ALTER TABLE delivery_zones DROP COLUMN map_polygon;
+--   ALTER TABLE app_settings DROP COLUMN delivery_map_url;
+--
+-- ============================================================
+
+BEGIN;
+
+ALTER TABLE delivery_zones ADD COLUMN map_polygon JSONB;
+
+ALTER TABLE app_settings ADD COLUMN delivery_map_url TEXT;
+
+COMMIT;
