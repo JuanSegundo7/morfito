@@ -31,7 +31,7 @@
   --blur-thin: 14px;
   --blur-regular: 28px;
   --blur-thick: 44px;
-  --blur-scrim: 6px;
+  --blur-scrim: 8px;
   --material-saturate: 165%;
 
   /* Hairlines y cantos especulares -- el 1px de luz que hace que una
@@ -55,6 +55,13 @@
      theme-color-provider.tsx lo pisa en runtime con el color de marca
      guardado, este es el valor de antes de que carguen los settings. */
   --accent-brand: #007aff;
+  /* hover/tints de acento (button.tsx, order-card, order-card-mobile): mismo
+     criterio, valor de arranque hasta que theme-color-provider los pisa con
+     los derivados del color de marca guardado. */
+  --accent-hover: #0066d6;
+  --accent-tint-08: rgba(0, 122, 255, 0.08);
+  --accent-tint-16: rgba(0, 122, 255, 0.16);
+  --accent-tint-32: rgba(0, 122, 255, 0.32);
   --primary: #007aff;
   --primary-foreground: #ffffff;
   --secondary: rgba(120, 120, 128, 0.16);
@@ -88,6 +95,16 @@
   --status-ready: #ff9500;
   --status-completed: #8e8e93;
   --status-canceled: #ff3b30;
+  /* Tints de estado: los usan order-status-style.ts (badges y borde de las
+     cards del kanban), order-card, order-card-mobile y varios pasos del
+     wizard. Estaban referenciados pero NUNCA definidos, así que esos fondos
+     no pintaban nada. Mismo alpha que jebbs-dashboard, sobre el color de
+     estado propio de morfito de arriba. */
+  --status-new-tint: rgba(0, 122, 255, 0.12);
+  --status-paid-tint: rgba(52, 199, 89, 0.12);
+  --status-ready-tint: rgba(255, 149, 0, 0.12);
+  --status-completed-tint: rgba(142, 142, 147, 0.12);
+  --status-canceled-tint: rgba(255, 59, 48, 0.12);
   /* iOS Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -100,20 +117,20 @@
 .dark {
   /* Misma escalera que :root, valores oscuros (portado de jebbs-dashboard,
      ver comentario en :root). */
-  --surface-0: #09090b;
-  --surface-1: #101215;
-  --surface-2: #18181b;
-  --surface-3: #202024;
+  --surface-0: #08090c;
+  --surface-1: #101218;
+  --surface-2: #171a22;
+  --surface-3: #1f232d;
 
-  --material-thin: rgba(24, 24, 27, 0.55);
-  --material-regular: rgba(24, 24, 27, 0.72);
-  --material-thick: rgba(15, 15, 17, 0.85);
+  --material-thin: rgba(19, 22, 29, 0.42);
+  --material-regular: rgba(19, 22, 29, 0.66);
+  --material-thick: rgba(11, 13, 18, 0.82);
   --well: rgba(0, 0, 0, 0.30);
 
   --blur-thin: 14px;
   --blur-regular: 28px;
   --blur-thick: 44px;
-  --blur-scrim: 6px;
+  --blur-scrim: 8px;
   --material-saturate: 165%;
 
   --hairline: rgba(255, 255, 255, 0.09);
@@ -121,13 +138,17 @@
   --specular: rgba(255, 255, 255, 0.10);
   --specular-strong: rgba(255, 255, 255, 0.18);
 
-  --background: #09090b;
+  --background: #08090c;
   --foreground: #fafafa;
   --card: var(--material-thin);
   --card-foreground: #fafafa;
   --popover: var(--material-thick);
   --popover-foreground: #fafafa;
   --accent-brand: #0a84ff; /* ver nota en :root -- default de primary_color_dark */
+  --accent-hover: #409cff; /* en canvas oscuro, hover ACLARA */
+  --accent-tint-08: rgba(10, 132, 255, 0.08);
+  --accent-tint-16: rgba(10, 132, 255, 0.16);
+  --accent-tint-32: rgba(10, 132, 255, 0.32);
   --primary: #0a84ff;
   --primary-foreground: #ffffff;
   --secondary: #27272a;
@@ -159,6 +180,12 @@
   --status-ready: #f59e0b;
   --status-completed: #71717a;
   --status-canceled: #ef4444;
+  /* Tints de estado, tema oscuro -- ver la nota en :root. */
+  --status-new-tint: rgba(59, 130, 246, 0.13);
+  --status-paid-tint: rgba(34, 197, 94, 0.13);
+  --status-ready-tint: rgba(245, 158, 11, 0.13);
+  --status-completed-tint: rgba(113, 113, 122, 0.12);
+  --status-canceled-tint: rgba(239, 68, 68, 0.13);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.6);
@@ -366,9 +393,9 @@
 /* Superficie de modal. Una sola definicion compartida por dialog,
    alert-dialog y sheet para que no puedan volver a divergir. */
 @utility modal-surface {
-  background-color: var(--material-thick);
-  backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
-  -webkit-backdrop-filter: blur(var(--blur-thick)) saturate(var(--material-saturate));
+  background-color: var(--material-regular);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--hairline);
   border-top-color: var(--specular-strong);
   box-shadow: var(--shadow-xl);
@@ -560,11 +587,7 @@
    backdrop-filter: none junto a un background-color sin reforzar. */
 @media (prefers-reduced-transparency: reduce) {
   .material-thin,
-  .material-regular,
-  .material-thick,
-  .modal-surface,
-  .scrim,
-  .ios-blur {
+  .material-regular {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -574,14 +597,11 @@
   .material-regular {
     background-color: var(--surface-2) !important;
   }
-  .material-thick,
-  .modal-surface {
-    background-color: var(--surface-3) !important;
-  }
-  .scrim,
-  .ios-blur {
-    background-color: rgba(0, 0, 0, 0.72) !important;
-  }
+  /* .material-thick / .modal-surface / .scrim / .ios-blur quedan afuera a
+     propósito: son las superficies que se superponen (modales, drawers,
+     toasts, popovers) y su efecto de vidrio con blur es la identidad visual
+     de la app (igual que la demo). Su material ya es lo bastante opaco
+     (--material-thick, alpha .86 en claro) para leerse bien. */
   .ios-sidebar [data-slot="sidebar-inner"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;

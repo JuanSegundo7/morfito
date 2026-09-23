@@ -99,9 +99,16 @@ export default async function DashboardLayout({
             richColors
             position="top-right"
             theme="dark"
+            style={{ "--border-radius": "var(--radius-xl)" } as React.CSSProperties}
             toastOptions={{
               classNames: {
-                toast: "material-thick !text-foreground",
+                // sonner inyecta CSS sin capa que le gana a las utilities de
+                // Tailwind v4; el "!" (important) devuelve el material a los
+                // toasts neutros sin pisar los colores de richColors.
+                toast:
+                  "[&:not([data-type=success]):not([data-type=error]):not([data-type=warning]):not([data-type=info])]:modal-surface! !text-foreground backdrop-blur-sm",
+                actionButton: "!bg-primary !text-primary-foreground !rounded-lg !font-medium",
+                cancelButton: "!bg-muted !text-muted-foreground !rounded-lg",
               },
             }}
           />
