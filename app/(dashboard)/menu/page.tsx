@@ -65,7 +65,7 @@ export default function MenuPage() {
   const updateBurger = useUpdateProduct();
   const deleteBurger = useDeleteProduct();
   const { uploadImage, deleteImage, isUploading, uploadProgress } =
-    useImageUpload();
+    useImageUpload("burger-images", "burgers/");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

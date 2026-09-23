@@ -1,5 +1,6 @@
 import { DeliveryType, DiscountType, PaymentMethod } from "@/lib/types";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useSettings } from "@/lib/hooks/use-app-settings";
 
 function getDefaultDeliveryTime(): string {
   const now = new Date();
@@ -9,19 +10,29 @@ function getDefaultDeliveryTime(): string {
   return `${hours}:${minutes}`;
 }
 
-const DEFAULT_DELIVERY_FEE_KEY = "restaurant_default_delivery_fee";
-
-function getDefaultDeliveryFee(): number {
-  if (typeof window === "undefined") return 2000;
-  const stored = localStorage.getItem(DEFAULT_DELIVERY_FEE_KEY);
-  return stored ? Number(stored) : 2000;
-}
-
+// Settings port from jebbs-dashboard: replaces the
+// "restaurant_default_delivery_fee" localStorage key (per-device, could
+// silently drift between counter/phone/back office) with the app_settings
+// singleton (scripts/048-app-settings.sql) — same value, same default (2000,
+// see lib/settings/defaults.ts), read through Supabase instead of
+// localStorage. useOrderSettings() calls useSettings() directly rather than
+// taking it as a parameter — it's a hook, so composing another hook inside
+// it needs no change to this hook's own call sites
+// (components/order-wizard/hooks/use-order-wizard.ts keeps calling
+// useOrderSettings() with no arguments).
 export function useOrderSettings() {
+  const appSettings = useSettings();
+  // Siempre apunta a `appSettings` sin disparar un re-render -- ver el
+  // comentario de `reset()` más abajo para por qué importa.
+  const appSettingsRef = useRef(appSettings);
+  appSettingsRef.current = appSettings;
+
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">(
     "pickup",
   );
-  const [deliveryFee, setDeliveryFee] = useState(getDefaultDeliveryFee);
+  const [deliveryFee, setDeliveryFee] = useState(
+    () => appSettings.default_delivery_fee,
+  );
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">(
     "cash",
   );
@@ -43,8 +54,16 @@ export function useOrderSettings() {
   const [priceAdjustment, setPriceAdjustment] = useState(0);
 
   const reset = () => {
+    // Lee del ref, NO del valor de `appSettings` cerrado en el render
+    // inicial de este hook -- `reset()` corre cuando el drawer del wizard
+    // se abre en modo creación (el drawer queda montado, solo `open`
+    // cambia), mucho después del render inicial, así que para entonces la
+    // query ["app-settings"] casi seguro ya resolvió. Leer el parámetro
+    // cerrado acá podría congelar el default hardcodeado para siempre si el
+    // wizard se abrió antes de que esa query resolviera.
+    const current = appSettingsRef.current;
     setDeliveryType("delivery");
-    setDeliveryFee(getDefaultDeliveryFee());
+    setDeliveryFee(current.default_delivery_fee);
     setPaymentMethod("transfer");
     setDiscountType("none");
     setDiscountValue(0);

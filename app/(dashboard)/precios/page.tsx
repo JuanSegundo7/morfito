@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,6 @@ import {
 } from "@/lib/utils/commission";
 import { Trash2, Plus } from "lucide-react";
 import { nanoid } from "nanoid";
-
-const DEFAULT_DELIVERY_FEE_KEY = "restaurant_default_delivery_fee";
 
 // Kept exactly as before the Phase 2 swap: this is precios/page.tsx's own
 // tab-label map (note it also covers the "combos" tab, which isn't a real
@@ -113,26 +112,12 @@ export default function PricingPage() {
     null,
   );
 
-  const [defaultDeliveryFee, setDefaultDeliveryFee] = useState(2000);
-  const [editingDeliveryFee, setEditingDeliveryFee] = useState(false);
-  const [deliveryFeeInput, setDeliveryFeeInput] = useState("");
-
-  useEffect(() => {
-    const stored = localStorage.getItem(DEFAULT_DELIVERY_FEE_KEY);
-    if (stored) setDefaultDeliveryFee(Number(stored));
-  }, []);
-
-  const saveDeliveryFee = () => {
-    const value = Math.max(0, Number(deliveryFeeInput));
-    localStorage.setItem(DEFAULT_DELIVERY_FEE_KEY, String(value));
-    setDefaultDeliveryFee(value);
-    setEditingDeliveryFee(false);
-  };
-
   // Cost/stock/finance porting, PR2: order sources + their commission rates
-  // — operator-configured localStorage data (see lib/utils/commission.ts),
-  // same read-once-on-mount / write-through-on-change pattern as
-  // defaultDeliveryFee above.
+  // — operator-configured localStorage data (see lib/utils/commission.ts).
+  // Untouched by the settings port from jebbs-dashboard (out of scope, see
+  // decision 5): morfito's own per-channel commission model stays exactly
+  // as it is, in localStorage — only the default delivery fee above moved
+  // to app_settings.
   const [orderSources, setOrderSources] = useState<OrderSourceConfig[]>([]);
   const [newSourceLabel, setNewSourceLabel] = useState("");
   const [newSourceRate, setNewSourceRate] = useState("");
@@ -224,67 +209,17 @@ export default function PricingPage() {
       />
 
       <div className="flex-1 overflow-auto py-6 space-y-6">
-        {/* Configuración general */}
-        <Card className="bg-card">
-          <CardHeader>
-            <CardTitle>Configuración general</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between rounded-lg bg-secondary/30 p-3">
-              <div>
-                <p className="font-medium">Costo de delivery por defecto</p>
-                <p className="text-caption text-muted-foreground">
-                  Se usa como valor inicial al crear un pedido con envío
-                </p>
-              </div>
-
-              {editingDeliveryFee ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">$</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={deliveryFeeInput}
-                    onChange={(e) => setDeliveryFeeInput(e.target.value)}
-                    className="w-28"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveDeliveryFee();
-                      if (e.key === "Escape") setEditingDeliveryFee(false);
-                    }}
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-primary"
-                    onClick={saveDeliveryFee}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => setEditingDeliveryFee(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="font-bold text-primary"
-                  onClick={() => {
-                    setDeliveryFeeInput(defaultDeliveryFee.toString());
-                    setEditingDeliveryFee(true);
-                  }}
-                >
-                  {formatCurrency(defaultDeliveryFee)}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Settings port from jebbs-dashboard: el costo de delivery por
+            defecto se mudó a /configuracion (app_settings singleton, ver
+            scripts/048-app-settings.sql) — ya no vive en localStorage ni se
+            edita en esta página. */}
+        <p className="text-caption text-muted-foreground px-1">
+          El costo de envío por defecto ahora se configura en{" "}
+          <Link href="/configuracion" className="underline hover:text-foreground">
+            Configuración
+          </Link>
+          .
+        </p>
 
         {/* Cost/stock/finance porting, PR2: order sources (sales channels) +
             their commission rates */}

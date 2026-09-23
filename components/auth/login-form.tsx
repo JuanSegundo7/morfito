@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Loader2, ShoppingBag, BarChart3, Users, Zap, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
+import { useBusinessName, useSettings } from "@/lib/hooks/use-app-settings"
 
 const FEATURES = [
   { icon: ShoppingBag, text: "Gestión de pedidos en tiempo real" },
@@ -18,6 +19,8 @@ const FEATURES = [
 
 export function LoginForm() {
   const router = useRouter()
+  const settings = useSettings()
+  const businessName = useBusinessName()
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -54,13 +57,13 @@ export function LoginForm() {
 
         <div className="flex items-center gap-3 relative z-10">
           <Image
-            src="/placeholder-logo.png"
-            alt="Morfito"
+            src={settings.logo_url ?? "/placeholder-logo.png"}
+            alt={businessName}
             width={36}
             height={36}
             className="rounded-xl object-cover"
           />
-          <span className="text-white font-semibold text-headline tracking-tight">Morfito</span>
+          <span className="text-white font-semibold text-headline tracking-tight">{businessName}</span>
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -88,7 +91,7 @@ export function LoginForm() {
         </div>
 
         <p className="text-zinc-600 text-caption relative z-10">
-          © {new Date().getFullYear()} Morfito
+          © {new Date().getFullYear()} {businessName}
         </p>
       </div>
 
@@ -96,8 +99,14 @@ export function LoginForm() {
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-zinc-900 p-8">
         <div className="w-full max-w-sm space-y-8">
           <div className="flex items-center gap-2 lg:hidden">
-            <Image src="/placeholder-logo.png" alt="Morfito" width={32} height={32} className="rounded-lg object-cover" />
-            <span className="text-white font-semibold">Morfito</span>
+            <Image
+              src={settings.logo_url ?? "/placeholder-logo.png"}
+              alt={businessName}
+              width={32}
+              height={32}
+              className="rounded-lg object-cover"
+            />
+            <span className="text-white font-semibold">{businessName}</span>
           </div>
 
           <div className="space-y-1">

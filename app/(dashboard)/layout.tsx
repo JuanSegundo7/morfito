@@ -1,6 +1,7 @@
 import type React from "react";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ThemeColorProvider } from "@/components/providers/theme-color-provider";
 import { MotionProvider } from "@/components/providers/motion-provider";
 
 import { Analytics } from "@vercel/analytics/next";
@@ -11,6 +12,7 @@ import { BillingBlock } from "@/components/billing/billing-block";
 import { getEntitlements } from "@/lib/entitlements";
 import { resolveVertical } from "@/lib/verticals";
 import { VerticalProvider } from "@/components/providers/vertical-provider";
+import { ProjectNameProvider } from "@/components/providers/project-name-provider";
 import { ServicesProvider } from "@/components/providers/services-provider";
 
 export default async function DashboardLayout({
@@ -42,9 +44,25 @@ export default async function DashboardLayout({
     entitlements.status === "known" ? entitlements.data.project.category : undefined,
   );
 
+  // Settings port from jebbs-dashboard: the control-panel's name for this
+  // deployment, resolved from the same entitlements fetch above (see
+  // lib/entitlements.ts's EntitlementsResponse.project.name) — this field
+  // was already fetched and simply discarded before this port. "Morfito" on
+  // the "unknown" branch matches ProjectNameProvider/useProjectName()'s own
+  // fail-open default, so a control-panel outage renders identically to
+  // "no provider mounted" (e.g. app/login/page.tsx).
+  const projectName = entitlements.status === "known" ? entitlements.data.project.name : "Morfito";
+
   return (
     <ThemeProvider>
       <QueryProvider>
+        <ProjectNameProvider projectName={projectName}>
+        {/* ThemeColorProvider necesita un QueryClientProvider ancestro
+            (useSettings() hace una query) -- por eso vive DENTRO de
+            QueryProvider, no afuera junto a ThemeProvider. No depende de
+            useTheme(): lee la clase "dark" directo del <html>, ver el
+            comentario en theme-color-provider.tsx. */}
+        <ThemeColorProvider>
         <ServicesProvider activeServiceKeys={activeServiceKeys}>
         <VerticalProvider vertical={vertical}>
           {isBlocked && entitlements.status === "known" ? (
@@ -90,6 +108,8 @@ export default async function DashboardLayout({
           <Analytics />
         </VerticalProvider>
         </ServicesProvider>
+        </ThemeColorProvider>
+        </ProjectNameProvider>
       </QueryProvider>
     </ThemeProvider>
   );

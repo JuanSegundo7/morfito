@@ -234,6 +234,32 @@ export interface Order {
   // discount_type/discount_value/discount_amount. Column added by PR2's
   // migration (scripts/043), wired up here in PR3.
   price_adjustment: number;
+  // Settings port, Phase 3 (scripts/049-delivery-zones.sql). Zone chosen for
+  // this order (null for pickup / orders predating the column), a frozen
+  // snapshot of its name, and whether the delivery fee still needs staff
+  // confirmation. Nothing in this app sets delivery_fee_pending = true yet —
+  // see the migration header.
+  delivery_zone_id: string | null;
+  delivery_zone_name: string | null;
+  delivery_fee_pending: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Settings port, Phase 3 (scripts/049-delivery-zones.sql). Zones are
+// soft-deleted only (is_active = false) — there is no delete mutation
+// anywhere in this app, since orders.delivery_zone_id has no ON DELETE
+// cascade.
+export interface DeliveryZone {
+  id: string;
+  name: string;
+  description: string | null;
+  fee: number;
+  is_active: boolean;
+  sort_order: number;
+  // Per-mille points ([x, y], each 0-1000) of the image size — see
+  // scripts/050-delivery-zone-polygons.sql and lib/utils/map-coordinates.ts.
+  map_polygon: [number, number][] | null;
   created_at: string;
   updated_at: string;
 }
@@ -435,4 +461,30 @@ export interface OrderItemDraft {
   meatPriceAdjustment: number;
   removedIngredients: string[];
   selectedExtras: { extra: Extra; quantity: number }[];
+}
+
+// ============================================================
+// APP SETTINGS (settings port from jebbs-dashboard, see
+// scripts/048-app-settings.sql). Singleton row — defaults mirrored in
+// lib/settings/defaults.ts.
+// ============================================================
+
+export interface AppSettings {
+  // Nullable OVERRIDE, not a second source of truth: null means "use
+  // lib/entitlements.ts's project.name for this deployment" — see
+  // lib/hooks/use-app-settings.ts's useBusinessName() and
+  // scripts/048-app-settings.sql's header for why this is white-label-only
+  // and NOT a hardcoded default the way jebbs-dashboard's business_name was.
+  business_name: string | null;
+  // Nullable — falls back to a fixed placeholder string in
+  // lib/utils/formatOrderWhatsapp.ts's buildOrderMessageVars when unset.
+  pickup_address: string | null;
+  logo_url: string | null;
+  // Public URL of the tenant's delivery-area map image (scripts/050).
+  delivery_map_url: string | null;
+  primary_color_light: string;
+  primary_color_dark: string;
+  whatsapp_template: string;
+  delivery_template: string;
+  default_delivery_fee: number;
 }

@@ -14,6 +14,7 @@ import {
   LogOut,
   CreditCard,
   Wallet,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -30,13 +31,8 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { SERVICE_NAV_HREFS } from "@/lib/service-nav-map";
 import Image from "next/image";
-import { Baloo_2 } from "next/font/google";
 import { useVertical } from "@/components/providers/vertical-provider";
-
-const baloo = Baloo_2({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-});
+import { useBusinessName, useSettings } from "@/lib/hooks/use-app-settings";
 
 const navigation = [
   { name: "Pedidos", href: "/", icon: LayoutDashboard },
@@ -58,6 +54,10 @@ const navigation = [
   // components/finanzas/finanzas-tabs.tsx) instead of the old /insumos page.
   { name: "Finanzas", href: "/finanzas", icon: Wallet },
   { name: "Mi Plan", href: "/plan", icon: CreditCard },
+  // Settings port from jebbs-dashboard, Fase 2: not gated by any
+  // SERVICE_NAV_HREFS key — every tenant can configure business name,
+  // brand color, logo and message templates regardless of plan.
+  { name: "Configuración", href: "/configuracion", icon: Settings },
 ];
 
 interface AppSidebarProps {
@@ -77,6 +77,8 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const vertical = useVertical();
+  const settings = useSettings();
+  const businessName = useBusinessName();
   const visibleNavigation = navigation
     .filter((item) => isNavItemVisible(item.href, activeServiceKeys))
     .filter((item) => !item.requiresCombos || vertical.features.hasCombos);
@@ -104,7 +106,7 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
             cambio de cero saltos.
           */}
           <Image
-            src="/placeholder-logo.png"
+            src={settings.logo_url ?? "/placeholder-logo.png"}
             alt="Logo"
             width={36}
             height={36}
@@ -131,8 +133,13 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
                 "group-data-[collapsible=icon]:opacity-0",
               )}
             >
-              <span className={cn(baloo.className, "text-headline font-bold tracking-wide whitespace-nowrap")}>
-                Morfito
+              {/* Baloo/tracking-wide se mantenía como parte de la identidad
+                  fija "Morfito" -- con un nombre custom del negocio (texto
+                  arbitrario, largo variable) se cambia a una tipografía
+                  neutra + truncate, mismo criterio que jebbs-dashboard@4e430f7
+                  aplicó en su propio sidebar. */}
+              <span className="text-headline font-bold whitespace-nowrap truncate">
+                {businessName}
               </span>
             </div>
           </div>

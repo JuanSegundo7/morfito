@@ -1,10 +1,59 @@
 import { formatCurrency, formatDateTime } from "@/lib/utils/format";
-import type { Order } from "@/lib/types";
+import { renderTemplate } from "@/lib/utils/renderTemplate";
+import { DEFAULT_APP_SETTINGS } from "@/lib/settings/defaults";
+import type { AppSettings } from "@/lib/types";
 
-export function formatOrderForWhatsapp(order: Order) {
+// Fallback used only when settings.pickup_address is null — byte-for-byte
+// the placeholder this file already hardcoded as PICKUP_ADDRESS before this
+// port, so an unconfigured shop's delivery message is unchanged on day one.
+const PICKUP_ADDRESS_PLACEHOLDER = "Dirección de retiro pendiente de configurar";
 
-  console.log(order)
+// Tipo acotado a exactamente lo que este formatter lee de una orden — no el
+// `Order` completo de lib/types/index.ts. Deliberadamente NO incluye
+// `product_id`/`kind`/`order_item_modifiers` (los campos reales que
+// order_items tiene hoy, ver lib/hooks/orders/use-orders.ts's select):
+// `extra_id`/`order_item_extras` abajo son los nombres que el bloque de
+// items de ESTE archivo sigue leyendo, sin haberse migrado nunca al modelo
+// de producto genérico (scripts/010-generic-products.sql) — inconsistencia
+// preexistente, documentada y explícitamente fuera de alcance para este
+// port (ver lib/settings/sample-order.ts's comentario para el efecto
+// práctico: la rama "SIDE" de abajo nunca dispara con datos reales).
+export interface OrderForMessage {
+  order_number: number | string;
+  created_at: string;
+  customer_name: string;
+  customer?: {
+    phone?: string | null;
+    customer_addresses?: { id: string; address: string | null; notes?: string | null }[] | null;
+  } | null;
+  customer_address_id?: string | null;
+  delivery_type: string;
+  delivery_fee: number;
+  payment_method: string;
+  delivery_time?: string | null;
+  discount_type?: string | null;
+  discount_value?: number | null;
+  discount_amount: number;
+  commission_amount: number;
+  price_adjustment: number;
+  total_amount: number;
+  notes?: string | null;
+  order_items?: {
+    quantity: number;
+    burger_name: string;
+    unit_price?: number;
+    subtotal: number;
+    customizations?: string | null;
+    extra_id?: string | null;
+    order_item_extras?: { extra_name: string; quantity: number; subtotal: number }[] | null;
+  }[] | null;
+}
 
+export function buildOrderMessageVars(
+  order: OrderForMessage,
+  settings: AppSettings,
+  businessName: string,
+): Record<string, string> {
   const isDelivery = order.delivery_type === "delivery";
 
   const address = order.customer?.customer_addresses?.find(
@@ -18,18 +67,10 @@ export function formatOrderForWhatsapp(order: Order) {
   const deliveryIcon = isDelivery ? "🚚" : "🏪";
   const deliveryLabel = isDelivery ? "Envío a domicilio" : "Retiro en local";
 
-  // ===== ENTREGA =====
-  const deliveryLines: string[] = [];
-  deliveryLines.push(`${deliveryIcon} *${deliveryLabel}*`);
-  if (isDelivery && address?.address) {
-    deliveryLines.push(`📍 ${address.address}`);
-    if (address.notes) deliveryLines.push(`   ${address.notes}`);
-  }
-  if (order.delivery_time) {
-    deliveryLines.push(`🕐 ${isDelivery ? "Entregar" : "Retirar"} a las: *${order.delivery_time}*`);
-  }
-
   // ===== ITEMS =====
+  // Sin cambios respecto al formatOrderForWhatsapp.ts previo a este port —
+  // ver el comentario de OrderForMessage arriba para por qué la rama
+  // `item.extra_id` nunca dispara con order_items reales.
   const itemsBlock = orderItems.map((item) => {
     const extrasTotal =
       item.order_item_extras?.reduce((sum, extra) => sum + extra.subtotal, 0) ?? 0;
@@ -39,7 +80,7 @@ export function formatOrderForWhatsapp(order: Order) {
     if (item.extra_id) {
       const extrasLines = item.order_item_extras?.length
         ? "\n" + item.order_item_extras
-            .map((e) => `   + ${e.quantity}x ${e.extra_name}${e.subtotal > 0 ? ` $${formatCurrency(e.subtotal)}` : ""}`)
+            .map((e) => `   + ${e.quantity}x ${e.extra_name}${e.subtotal > 0 ? ` — ${formatCurrency(e.subtotal)}` : ""}`)
             .join("\n")
         : "";
       return `🍟 ${item.quantity}x ${item.burger_name} — ${formatCurrency(item.subtotal)}${extrasLines}${extrasTotal > 0 ? `\n   *Subtotal: ${formatCurrency(itemTotal)}*` : ""}`;
@@ -144,45 +185,61 @@ export function formatOrderForWhatsapp(order: Order) {
 
   // ===== TOTALES =====
   const totalParts: string[] = [];
-  totalParts.push(`Subtotal ${formatCurrency(itemsBlock ? orderItems.reduce((sum, item) => {
+  totalParts.push(`Subtotal ${formatCurrency(orderItems.reduce((sum, item) => {
     const extrasTotal = item.order_item_extras?.reduce((s, e) => s + e.subtotal, 0) ?? 0;
     return sum + item.subtotal + extrasTotal;
-  }, 0) : 0)}`);
+  }, 0))}`);
   if (order.delivery_fee > 0) totalParts.push(`Envío ${formatCurrency(order.delivery_fee)}`);
+  const discountLabel = order.discount_type === "percentage" ? `Desc. ${order.discount_value}%` : "Desc.";
   if (order.discount_amount > 0) {
-    const label = order.discount_type === "percentage" ? `Desc. ${order.discount_value}%` : "Desc.";
-    totalParts.push(`${label} -${formatCurrency(order.discount_amount)}`);
+    totalParts.push(`${discountLabel} -${formatCurrency(order.discount_amount)}`);
   }
-  // Cost/stock/finance porting, PR2: same conditional-inclusion pattern as
-  // the discount line above (only shown when there's actually a nonzero
-  // amount to report).
   if (order.commission_amount > 0) {
     totalParts.push(`Comisión -${formatCurrency(order.commission_amount)}`);
   }
-  // Cost/stock/finance porting, PR3: `!== 0` gated (not `> 0` like the
-  // discount/commission lines above) — a negative price_adjustment is a
-  // legitimate value here, distinct from and never folded into the
-  // discount line.
+  const adjustmentSign = order.price_adjustment > 0 ? "+" : "-";
   if (order.price_adjustment !== 0) {
-    const sign = order.price_adjustment > 0 ? "+" : "-";
-    totalParts.push(
-      `Ajuste ${sign}${formatCurrency(Math.abs(order.price_adjustment))}`,
-    );
+    totalParts.push(`Ajuste ${adjustmentSign}${formatCurrency(Math.abs(order.price_adjustment))}`);
   }
 
-  return `*RESTAURANTE*
-🧾 *PEDIDO #${order.order_number}* · ${formatDateTime(order.created_at)}
+  return {
+    negocio: businessName,
+    numero: String(order.order_number),
+    fecha: formatDateTime(order.created_at),
+    cliente: order.customer_name,
+    telefono: order.customer?.phone ?? "-",
+    metodo_pago: paymentIcon,
+    icono_entrega: deliveryIcon,
+    tipo_entrega: deliveryLabel,
+    direccion: isDelivery ? (address?.address ?? "") : "",
+    // Igual que el código original: las notas de dirección solo se mostraban
+    // anidadas dentro del `if` de `address.address` — nunca solas.
+    notas_direccion: isDelivery && address?.address ? (address?.notes ?? "") : "",
+    etiqueta_hora: order.delivery_time ? (isDelivery ? "Entregar" : "Retirar") : "",
+    hora_entrega: order.delivery_time ?? "",
+    entrega: isDelivery ? (address?.address ?? "-") : "Retira en local",
+    direccion_retiro: settings.pickup_address ?? PICKUP_ADDRESS_PLACEHOLDER,
+    envio: formatCurrency(order.delivery_fee),
+    total: formatCurrency(order.total_amount),
+    notas: order.notes ?? "",
+    linea_subtotal: totalParts[0],
+    linea_envio: order.delivery_fee > 0 ? `Envío ${formatCurrency(order.delivery_fee)}` : "",
+    linea_descuento: order.discount_amount > 0 ? `${discountLabel} -${formatCurrency(order.discount_amount)}` : "",
+    linea_comision: order.commission_amount > 0 ? `Comisión -${formatCurrency(order.commission_amount)}` : "",
+    linea_ajuste: order.price_adjustment !== 0 ? `Ajuste ${adjustmentSign}${formatCurrency(Math.abs(order.price_adjustment))}` : "",
+    items: itemsBlock,
+    totales: totalParts.join(" · "),
+  };
+}
 
-👤 *${order.customer_name}* · ${paymentIcon}
-${deliveryLines.join("\n")}
-
-📦 *Detalle*
-${itemsBlock}
-
-💰 ${totalParts.join(" · ")}
-*TOTAL: ${formatCurrency(order.total_amount)}*
-━━━━━━━━━━━━━━━${order.notes ? `\n📝 ${order.notes}` : ""}
-Gracias por tu compra 🙌
-
-*⚠️ POR FAVOR VERIFICAR QUE ESTÉ TODO CORRECTO EN LA ORDEN ⚠️*`.trim();
+export function formatOrderForWhatsapp(
+  order: OrderForMessage,
+  settings: AppSettings,
+  businessName: string,
+): string {
+  const vars = buildOrderMessageVars(order, settings, businessName);
+  const template = settings.whatsapp_template?.trim()
+    ? settings.whatsapp_template
+    : DEFAULT_APP_SETTINGS.whatsapp_template;
+  return renderTemplate(template, vars);
 }
