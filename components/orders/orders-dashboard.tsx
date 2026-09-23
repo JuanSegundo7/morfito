@@ -117,6 +117,23 @@ export function OrdersDashboard() {
   // el transform-origin del DragOverlay (§7: el lift tiene que originarse
   // donde tocó el dedo, no en el centro abstracto de la card).
   const [dragOrigin, setDragOrigin] = useState("50% 50%");
+  // Movimiento optimista LOCAL y síncrono del card recién soltado. dnd-kit
+  // anima el DragOverlay hacia el nodo del card que soltaste, medido en el
+  // render en que active pasa a null. El movimiento optimista de
+  // useUpdateOrderStatus llega DESPUÉS (onMutate es async: await
+  // cancelQueries + el scheduler de react-query), así que en ese render el
+  // card seguía en su columna de origen y el fantasma "volvía" a su lugar y
+  // desaparecía, cuando el pedido ya estaba guardado en la columna nueva (bug
+  // solo visual, reportado). Acá el override se aplica en el MISMO batch que
+  // setActiveOrder(null) (ver handleDragEnd): el card ya está en la columna
+  // nueva en ese render y el fantasma se desliza hasta ahí. Se limpia en
+  // onSettled -- para entonces la cache de react-query ya tiene el mismo
+  // estado (onSuccess) o lo revirtió (onError con rollback), así que soltar el
+  // override no produce salto.
+  const [pendingMove, setPendingMove] = useState<{
+    orderId: string;
+    status: OrderStatus;
+  } | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
 
@@ -134,7 +151,13 @@ export function OrdersDashboard() {
   }, [orderToEdit, orderIdToEdit]);
 
   // Sort orders by delivery_time ascending (earliest first, null/empty last)
-  const sortedOrders = [...(orders ?? [])].sort((a, b) => {
+  const sortedOrders = [...(orders ?? [])]
+    .map((o) =>
+      pendingMove && o.id === pendingMove.orderId
+        ? { ...o, status: pendingMove.status }
+        : o,
+    )
+    .sort((a, b) => {
     if (!a.delivery_time && !b.delivery_time) return 0;
     if (!a.delivery_time) return 1;
     if (!b.delivery_time) return -1;
@@ -244,6 +267,11 @@ export function OrdersDashboard() {
     }
 
     setActiveOrder(null);
+    // Mismo batch que setActiveOrder(null): el card ya está en la columna
+    // nueva cuando dnd-kit mide el destino del DragOverlay (ver pendingMove).
+    if (previousStatus !== newStatus) {
+      setPendingMove({ orderId, status: newStatus });
+    }
     // Undo solo en el sentido "hacia atras" (listo->nuevo). nuevo->listo
     // es el flujo normal de alta frecuencia y se queda silencioso -- listo->
     // nuevo es rara y casi siempre un arrastre accidental, ahi si vale un
@@ -251,6 +279,7 @@ export function OrdersDashboard() {
     updateStatus.mutate(
       { orderId, status: newStatus },
       {
+        onSettled: () => setPendingMove(null),
         onSuccess: () => {
           if (previousStatus === "ready" && newStatus === "new") {
             toast("Pedido movido a Nuevos", {
