@@ -54,4 +54,6 @@ Nombre Del Cliente: {{cliente}}
   primary_color_dark: "#0a84ff",
   logo_url: null,
   delivery_map_url: null,
+  // NULL = default layout (scripts/051); useSettings() normalizes it.
+  ticket_layout: null,
 };

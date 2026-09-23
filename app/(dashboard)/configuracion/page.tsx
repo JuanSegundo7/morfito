@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, Palette, MessageSquare, MapPin } from "lucide-react";
+import { SlidersHorizontal, Palette, MessageSquare, MapPin, Printer } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import { useSettings, useUpdateAppSettings, useBusinessName } from "@/lib/hooks/
 import { NegocioCard } from "@/components/configuracion/negocio-card";
 import { PedidosCard } from "@/components/configuracion/pedidos-card";
 import { AparienciaCard } from "@/components/configuracion/apariencia-card";
+import { ImpresoraTab } from "@/components/configuracion/impresora-tab";
 import { EnviosTab } from "@/components/configuracion/envios-tab";
 import { TemplateEditor } from "@/components/configuracion/template-editor";
 import { SAMPLE_ORDER } from "@/lib/settings/sample-order";
@@ -26,32 +27,18 @@ import { DEFAULT_APP_SETTINGS } from "@/lib/settings/defaults";
 //    for the tour's querySelector to latch onto. Confirmed absent from this
 //    repo: no "nextstepjs" in package.json, no components/onboarding/
 //    directory. None of that ported.
-// 2. 4 tabs (General, Envíos, Apariencia, Mensajes), not jebbs' 5.
-//    "Envíos" holds the map image card, the map preview and the zones CRUD
-//    card (with the per-zone polygon editor). The Envíos panel is
-//    deliberately NOT forceMount: the polygon editor converts pointer
-//    positions through the SVG's screen CTM, which a force-mounted hidden
-//    panel would report as null/zero-sized. "Impresora"
-//    is skipped entirely — see the note below.
-// 3. ImpresoraTab was NOT built. jebbs' tab exists to download
-//    jebbs-print-service.exe from a Supabase Storage bucket
-//    ("downloads"/"print-service/..."). Checked this repo first: morfito
-//    already has its own, more complete print-service integration —
-//    components/order-wizard/components/print-service.tsx's
-//    PrintServiceIndicator (rendered in every page's Header, including
-//    this one), lib/hooks/use-printers.ts, lib/hooks/use-print-order.ts —
-//    talking to a sibling morfito-print-service repo on localhost:3001.
-//    There is no download-bucket/path equivalent anywhere in this
-//    codebase for that installer, so per the port plan's decision 4
-//    ("si no [hay equivalente], se omite esa tab sin bloquear el resto
-//    del plan") this tab is left out rather than inventing a fake bucket
-//    path. If morfito-print-service ever publishes a real installer
-//    download, add the tab in that same work unit.
+// 2. 5 tabs (General, Envíos, Apariencia, Mensajes, Impresora), same as jebbs.
+//    The Envíos panel is deliberately NOT forceMount: the polygon editor
+//    converts pointer positions through the SVG's screen CTM, which a
+//    force-mounted hidden panel would report as null/zero-sized. The Impresora
+//    panel is not forceMount either.
+// 3. ImpresoraTab downloads morfito-print-service.exe from the public
+//    "downloads" Storage bucket ("print-service/morfito-print-service.exe").
 export default function ConfiguracionPage() {
   const settings = useSettings();
   const updateSettings = useUpdateAppSettings();
   const businessName = useBusinessName();
-  const [tab, setTab] = useState<"general" | "envios" | "apariencia" | "mensajes">("general");
+  const [tab, setTab] = useState<"general" | "envios" | "apariencia" | "mensajes" | "impresora">("general");
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
@@ -72,6 +59,9 @@ export default function ConfiguracionPage() {
               </TabsTrigger>
               <TabsTrigger value="mensajes" className="rounded-full px-6 text-subheadline gap-1.5">
                 <MessageSquare className="h-4 w-4" /> Mensajes
+              </TabsTrigger>
+              <TabsTrigger value="impresora" className="rounded-full px-6 text-subheadline gap-1.5">
+                <Printer className="h-4 w-4" /> Impresora
               </TabsTrigger>
             </TabsList>
           </div>
@@ -139,6 +129,10 @@ export default function ConfiguracionPage() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="impresora" className="mt-6">
+            <ImpresoraTab />
           </TabsContent>
         </Tabs>
       </div>

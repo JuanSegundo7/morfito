@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_APP_SETTINGS } from "@/lib/settings/defaults";
 import { useProjectName } from "@/components/providers/project-name-provider";
+import { normalizeTicketLayout, type TicketLayout } from "@/lib/settings/ticket-layout";
 import type { AppSettings } from "@/lib/types";
 
 export function useAppSettings() {
@@ -29,9 +31,22 @@ export function useAppSettings() {
 // Nunca undefined: degrada a los defaults sembrados por
 // scripts/048-app-settings.sql mientras la query está en vuelo, si falló,
 // o si la fila no existe todavía.
-export function useSettings(): AppSettings {
+//
+// ticket_layout se guarda crudo (jsonb nullable, scripts/051) pero acá se
+// expone SIEMPRE normalizado: NULL, basura o una versión vieja/nueva del
+// layout resuelven a un TicketLayout válido.
+export type ResolvedAppSettings = Omit<AppSettings, "ticket_layout"> & {
+  ticket_layout: TicketLayout;
+};
+
+export function useSettings(): ResolvedAppSettings {
   const { data } = useAppSettings();
-  return data ?? DEFAULT_APP_SETTINGS;
+  const raw = data ?? DEFAULT_APP_SETTINGS;
+  const rawLayout = raw.ticket_layout;
+  return useMemo(
+    () => ({ ...raw, ticket_layout: normalizeTicketLayout(rawLayout) }),
+    [raw, rawLayout],
+  );
 }
 
 // Resuelve el nombre de negocio a mostrar (sidebar, login, mensajes de

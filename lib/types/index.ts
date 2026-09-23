@@ -1,3 +1,5 @@
+import type { TicketLayout } from "@/lib/settings/ticket-layout";
+
 // ============================================
 // BASE TYPES - Directamente de la DB
 // ============================================
@@ -482,6 +484,10 @@ export interface AppSettings {
   logo_url: string | null;
   // Public URL of the tenant's delivery-area map image (scripts/050).
   delivery_map_url: string | null;
+  // Stored raw (nullable jsonb, scripts/051). useSettings() exposes it
+  // normalized; use normalizeTicketLayout() when reading from
+  // useAppSettings().data directly.
+  ticket_layout: TicketLayout | null;
   primary_color_light: string;
   primary_color_dark: string;
   whatsapp_template: string;

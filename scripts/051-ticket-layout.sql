@@ -1,0 +1,44 @@
+-- ============================================================
+-- Morfito — editable thermal ticket layout (051)
+-- ============================================================
+--
+-- WHAT THIS FILE IS
+-- ------------------
+-- Adds app_settings.ticket_layout: one per-business layout for the printed
+-- thermal ticket (which blocks print, in what order, with which options).
+-- Edited from Configuracion > Impresora; read by the print service through
+-- the same app_settings select it already uses for branding.
+--
+-- NULL MEANS "DEFAULT LAYOUT"
+-- ----------------------------
+-- The column is nullable with no default. NULL (every existing row) resolves
+-- to DEFAULT_TICKET_LAYOUT in both the dashboard (lib/settings/
+-- ticket-layout.ts) and the print service (src/printer/ticket-layout.ts),
+-- which reproduces the historical fixed ticket exactly. Nothing changes for
+-- a business that never touches the editor.
+--
+-- Shape (validated/normalized in application code, not in the DB, so an
+-- older or newer client can never make the column unreadable):
+--   { "version": 1,
+--     "blocks": [ { "id": "items", "enabled": true,
+--                   "options": { "showPrices": true } }, ... ] }
+--
+-- HOW TO RUN
+-- -----------
+-- Once per client database (Supabase SQL editor). Requires 048.
+--
+--   SELECT column_name, data_type FROM information_schema.columns
+--   WHERE table_schema = 'public' AND table_name = 'app_settings'
+--     AND column_name = 'ticket_layout';
+--
+-- Idempotent (IF NOT EXISTS): safe to re-run across many client databases.
+-- Unlike 049/050 this is a single nullable jsonb column, so a pre-existing
+-- column of a wrong type is not a realistic risk.
+--
+-- REVERSIBILITY
+-- --------------
+--   ALTER TABLE app_settings DROP COLUMN ticket_layout;
+--
+-- ============================================================
+
+ALTER TABLE app_settings ADD COLUMN IF NOT EXISTS ticket_layout jsonb;
