@@ -25,8 +25,7 @@ import type { Order } from "@/lib/types";
 import { formatCurrency, getRelativeTime } from "@/lib/utils/format";
 import { useTogglePaymentStatus, useQuickPatchOrder } from "@/lib/hooks/orders/use-orders";
 import { cn } from "@/lib/utils";
-import { formatOrderForWhatsapp } from "@/lib/utils/formatOrderWhatsapp";
-import { formatOrderForDelivery } from "@/lib/utils/formatOrderDelivery";
+import { useOrderMessages } from "@/lib/hooks/use-order-messages";
 import { toast } from "sonner";
 import { statusConfig, statusEdgeStyle } from "@/lib/utils/order-status-style";
 
@@ -49,17 +48,23 @@ export function OrderCard({
   onMoveBack,
   visualStatus = order.status,
 }: OrderCardProps) {
-  const canEdit = order.status === "new" || order.status === "ready";
+  // delivery_fee_pending: staff must be able to resolve the fee even after
+  // the order advanced past new/ready (see scripts/049-delivery-zones.sql).
+  const canEdit =
+    order.status === "new" || order.status === "ready" || order.delivery_fee_pending;
   const togglePayment = useTogglePaymentStatus();
   const quickPatch = useQuickPatchOrder();
+  const { copyWhatsapp, copyDelivery } = useOrderMessages();
   const [isEditing, setIsEditing] = useState(false);
   const [draftAmount, setDraftAmount] = useState("");
   const [draftMethod, setDraftMethod] = useState<"cash" | "transfer">(order.payment_method);
+  const [draftDeliveryFee, setDraftDeliveryFee] = useState("");
 
   const handleStartEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setDraftAmount(String(order.total_amount));
     setDraftMethod(order.payment_method);
+    setDraftDeliveryFee(String(order.delivery_fee));
     setIsEditing(true);
   };
 
@@ -75,8 +80,23 @@ export function OrderCard({
       toast.error("Monto inválido");
       return;
     }
+    let deliveryFee: number | undefined;
+    if (order.delivery_fee_pending) {
+      const parsedFee = Number(draftDeliveryFee);
+      if (!Number.isFinite(parsedFee) || parsedFee < 0) {
+        toast.error("Costo de envío inválido");
+        return;
+      }
+      deliveryFee = parsedFee;
+    }
+
     quickPatch.mutate(
-      { orderId: order.id, total_amount: parsed, payment_method: draftMethod },
+      {
+        orderId: order.id,
+        total_amount: parsed,
+        payment_method: draftMethod,
+        ...(deliveryFee !== undefined ? { delivery_fee: deliveryFee } : {}),
+      },
       {
         onSuccess: () => {
           toast.success("Pedido actualizado");
@@ -93,18 +113,14 @@ export function OrderCard({
     togglePayment.mutate({ orderId: order.id, isPaid: !order.is_paid });
   };
 
-  const handleCopy = async (e: React.MouseEvent) => {
+  const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = formatOrderForWhatsapp(order);
-    await navigator.clipboard.writeText(text);
-    toast.success("Pedido copiado para WhatsApp");
+    copyWhatsapp(order);
   };
 
-  const handleCopyDelivery = async (e: React.MouseEvent) => {
+  const handleCopyDelivery = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = formatOrderForDelivery(order);
-    await navigator.clipboard.writeText(text);
-    toast.success("Pedido copiado para delivery");
+    copyDelivery(order);
   };
 
   const status = visualStatus ?? order.status;
@@ -237,6 +253,21 @@ export function OrderCard({
                   </button>
                 ))}
               </div>
+              {order.delivery_fee_pending && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-caption text-muted-foreground">
+                    Costo de envío
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={draftDeliveryFee}
+                    onChange={(e) => setDraftDeliveryFee(e.target.value)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="w-28 h-8 px-2"
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -298,6 +329,14 @@ export function OrderCard({
               {order.payment_method === "cash" && (
                 <Badge variant="outline" className="text-caption gap-1 bg-card">
                   💵 Efectivo
+                </Badge>
+              )}
+              {order.delivery_fee_pending && (
+                <Badge
+                  variant="outline"
+                  className="text-caption gap-1 border-destructive text-destructive"
+                >
+                  Envío a confirmar
                 </Badge>
               )}
             </div>

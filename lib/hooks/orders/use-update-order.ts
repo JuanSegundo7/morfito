@@ -137,6 +137,12 @@ export function useUpdateOrder() {
           commission_rate: payload.commission_rate ?? 0,
           commission_amount: commissionAmount,
           price_adjustment: priceAdjustment,
+          // Settings port, Phase 3: saving through the full edit always
+          // means staff confirmed the fee (payload.delivery_fee is part of
+          // the recomputed total above). This is also the only way to
+          // resolve a pending order that useQuickPatchOrder's
+          // commission/price_adjustment guard refuses to touch.
+          delivery_fee_pending: false,
         })
         .eq("id", orderId)
         .select()

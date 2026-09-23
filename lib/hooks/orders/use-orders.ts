@@ -461,10 +461,25 @@ export function useQuickPatchOrder() {
       orderId,
       total_amount,
       payment_method,
+      delivery_fee,
     }: {
       orderId: string;
       total_amount: number;
       payment_method: "cash" | "transfer";
+      // Settings port, Phase 3: present only when staff are resolving a
+      // "Envío a confirmar" order (delivery_fee_pending) from the kanban
+      // card. Ported from jebbs-dashboard's useQuickPatchOrder.
+      //
+      // Interaction with the commission/price_adjustment guard below: the
+      // guard runs FIRST and always wins. An order with a nonzero
+      // commission_amount/price_adjustment AND delivery_fee_pending = true
+      // therefore CANNOT be resolved from quick-edit at all — the guard
+      // throws before delivery_fee is ever written. The escape hatch is the
+      // full edit path (use-update-order.ts), which recomputes the total
+      // from the full item/discount/commission breakdown and clears
+      // delivery_fee_pending itself. That is why that file's change matters
+      // more here than it does in jebbs (which has no such guard).
+      delivery_fee?: number;
     }) => {
       // Cost/stock/finance porting, PR4 task 7a.9 (R4 guard): this mutation
       // writes total_amount as a raw manual override — it has no access to
@@ -505,16 +520,30 @@ export function useQuickPatchOrder() {
           total_amount,
           payment_method,
           updated_at: new Date().toISOString(),
+          // Receiving a delivery_fee means staff resolved the fee of a
+          // "Envío a confirmar" order — it never stays pending after this.
+          ...(delivery_fee !== undefined
+            ? { delivery_fee, delivery_fee_pending: false }
+            : {}),
         })
         .eq("id", orderId);
       if (error) throw error;
     },
-    onMutate: async ({ orderId, total_amount, payment_method }) => {
+    onMutate: async ({ orderId, total_amount, payment_method, delivery_fee }) => {
       await queryClient.cancelQueries({ queryKey: ["orders"] });
       const previousOrders = queryClient.getQueryData<Order[]>(["orders"]);
       queryClient.setQueryData<Order[]>(["orders"], (old) =>
         old?.map((o) =>
-          o.id === orderId ? { ...o, total_amount, payment_method } : o,
+          o.id === orderId
+            ? {
+                ...o,
+                total_amount,
+                payment_method,
+                ...(delivery_fee !== undefined
+                  ? { delivery_fee, delivery_fee_pending: false }
+                  : {}),
+              }
+            : o,
         ),
       );
       return { previousOrders };
