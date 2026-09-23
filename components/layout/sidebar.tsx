@@ -12,7 +12,6 @@ import {
   Component,
   User,
   LogOut,
-  CreditCard,
   Wallet,
   Settings,
 } from "lucide-react";
@@ -53,7 +52,7 @@ const navigation = [
   // points at the new /finanzas shell (Insumos is now a tab there, see
   // components/finanzas/finanzas-tabs.tsx) instead of the old /insumos page.
   { name: "Finanzas", href: "/finanzas", icon: Wallet },
-  { name: "Mi Plan", href: "/plan", icon: CreditCard },
+  // Oculto por ahora (pedido del dueño): { name: "Mi Plan", href: "/plan", icon: CreditCard },
   // Settings port from jebbs-dashboard, Fase 2: not gated by any
   // SERVICE_NAV_HREFS key — every tenant can configure business name,
   // brand color, logo and message templates regardless of plan.
@@ -106,11 +105,11 @@ export function AppSidebar({ activeServiceKeys }: AppSidebarProps) {
             cambio de cero saltos.
           */}
           <Image
-            src={settings.logo_url ?? "/placeholder-logo.png"}
+            src={settings.logo_url ?? "/logo.webp"}
             alt="Logo"
             width={36}
             height={36}
-            className="rounded-lg shrink-0 size-9 object-cover"
+            className="rounded-lg shrink-0 size-9 object-cover transition-[width,height] duration-300 ease-in-out group-data-[collapsible=icon]:size-8"
           />
           {/*
             grid-template-columns 1fr -> 0fr, no max-width -> max-w-0: con

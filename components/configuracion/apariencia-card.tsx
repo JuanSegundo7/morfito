@@ -14,7 +14,7 @@ import { toast } from "sonner";
 // / prefix "logos/" per Phase 1's use-image-upload.ts generalization — the
 // bucket needs to be created by hand in Supabase (see Phase 1 notes); until
 // then, uploads here fail at runtime, which is expected and not a bug in
-// this file. Fallback image is morfito's own "/placeholder-logo.png"
+// this file. Fallback image is morfito's own "/logo.webp"
 // (same one components/layout/sidebar.tsx and components/auth/login-form.tsx
 // already use), not jebbs' tenant-specific "/jebbs.jpg".
 export function AparienciaCard() {
@@ -57,7 +57,7 @@ export function AparienciaCard() {
         <div className="flex items-center justify-between rounded-lg bg-secondary/30 p-3">
           <div className="flex items-center gap-3">
             <Image
-              src={settings.logo_url ?? "/placeholder-logo.png"}
+              src={settings.logo_url ?? "/logo.webp"}
               alt="Logo"
               width={48}
               height={48}

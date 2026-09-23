@@ -9,8 +9,8 @@ export const metadata: Metadata = {
   description: "Sistema de gestión de operaciones para restaurantes",
   generator: "v0.app",
   icons: {
-    icon: "/placeholder-logo.png",
-    apple: "/placeholder-logo.png",
+    icon: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 

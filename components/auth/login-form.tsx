@@ -57,7 +57,7 @@ export function LoginForm() {
 
         <div className="flex items-center gap-3 relative z-10">
           <Image
-            src={settings.logo_url ?? "/placeholder-logo.png"}
+            src={settings.logo_url ?? "/logo.webp"}
             alt={businessName}
             width={36}
             height={36}
@@ -100,7 +100,7 @@ export function LoginForm() {
         <div className="w-full max-w-sm space-y-8">
           <div className="flex items-center gap-2 lg:hidden">
             <Image
-              src={settings.logo_url ?? "/placeholder-logo.png"}
+              src={settings.logo_url ?? "/logo.webp"}
               alt={businessName}
               width={32}
               height={32}
